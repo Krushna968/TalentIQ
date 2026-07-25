@@ -1,108 +1,58 @@
 import React from 'react';
 
-// 6-axis SVG radar chart — no external dependency needed
-const AXES = ['Tech Depth', 'Innovation', 'Leadership', 'Velocity', 'Collab', 'Comms'];
-const NUM_RINGS = 4;
-const SIZE = 200;
-const CX = 100;
-const CY = 100;
-const MAX_R = 72;
+const axes = ['Tech Depth', 'Innovation', 'Leadership', 'Velocity', 'Collab', 'Comms'];
+const size = 300;
+const center = 150;
+const maxRadius = 105;
 
-function angleForAxis(i, total) {
-  // Start at top (-90deg), go clockwise
-  return (Math.PI * 2 * i) / total - Math.PI / 2;
+function angle(index) {
+  return index / axes.length * Math.PI * 2 - Math.PI / 2;
 }
 
-function polarToXY(angle, r) {
+function point(index, radius) {
   return {
-    x: CX + r * Math.cos(angle),
-    y: CY + r * Math.sin(angle),
+    x: center + Math.cos(angle(index)) * radius,
+    y: center + Math.sin(angle(index)) * radius,
   };
 }
 
-function buildRingPoints(r) {
-  return AXES.map((_, i) => {
-    const { x, y } = polarToXY(angleForAxis(i, AXES.length), r);
-    return `${x},${y}`;
-  }).join(' ');
-}
-
-function buildDataPoints(data) {
-  return AXES.map((axis, i) => {
-    const item = data.find(d => d.axis === axis);
-    const val = item ? item.value : 0;
-    const r = (val / 100) * MAX_R;
-    const { x, y } = polarToXY(angleForAxis(i, AXES.length), r);
-    return `${x},${y}`;
+function pointsFor(radius) {
+  return axes.map((_, index) => {
+    const position = point(index, radius);
+    return position.x + ',' + position.y;
   }).join(' ');
 }
 
 export default function RadarChart({ data = [] }) {
-  const rings = Array.from({ length: NUM_RINGS }, (_, i) => ((i + 1) / NUM_RINGS) * MAX_R);
+  const dataPoints = axes.map((axis, index) => {
+    const value = data.find((item) => item.axis === axis)?.value || 0;
+    const position = point(index, value / 100 * maxRadius);
+    return position.x + ',' + position.y;
+  }).join(' ');
 
   return (
-    <div className="relative w-full flex items-center justify-center">
-      <svg viewBox="0 0 200 200" className="w-full max-h-[280px]">
-        {/* Ring grid */}
-        {rings.map((r, i) => (
-          <polygon
-            key={i}
-            points={buildRingPoints(r)}
-            fill="none"
-            stroke="#30353a"
-            strokeWidth="1"
-          />
-        ))}
-        {/* Axis lines */}
-        {AXES.map((_, i) => {
-          const outer = polarToXY(angleForAxis(i, AXES.length), MAX_R);
-          return (
-            <line
-              key={i}
-              x1={CX} y1={CY}
-              x2={outer.x} y2={outer.y}
-              stroke="#30353a"
-              strokeWidth="1"
-            />
-          );
+    <div style={{ position: 'relative', width: 'min(100%, 430px)', aspectRatio: '1' }}>
+      <svg viewBox={'0 0 ' + size + ' ' + size} width="100%" height="100%" aria-label="Competency radar chart">
+        <defs>
+          <filter id="radar-glow"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+          <radialGradient id="radar-fill"><stop offset="0%" stopColor="#00e5ff" stopOpacity=".35" /><stop offset="100%" stopColor="#00e5ff" stopOpacity=".06" /></radialGradient>
+        </defs>
+        {[.25, .5, .75, 1].map((multiple) => <polygon key={multiple} points={pointsFor(maxRadius * multiple)} fill="none" stroke="rgba(0,229,255,.22)" strokeWidth="1" />)}
+        {axes.map((_, index) => {
+          const outer = point(index, maxRadius);
+          return <line key={index} x1={center} y1={center} x2={outer.x} y2={outer.y} stroke="rgba(0,229,255,.22)" strokeWidth="1" />;
         })}
-        {/* Data polygon */}
-        <polygon
-          points={buildDataPoints(data)}
-          fill="rgba(85,216,231,0.18)"
-          stroke="#55d8e7"
-          strokeWidth="2"
-          style={{ filter: 'drop-shadow(0 0 5px rgba(85,216,231,0.4))' }}
-        />
-        {/* Data points */}
-        {AXES.map((axis, i) => {
-          const item = data.find(d => d.axis === axis);
-          const val = item ? item.value : 0;
-          const r = (val / 100) * MAX_R;
-          const { x, y } = polarToXY(angleForAxis(i, AXES.length), r);
-          return <circle key={i} cx={x} cy={y} r="3.5" fill="#e8b84b" />;
+        <polygon points={dataPoints} fill="url(#radar-fill)" stroke="#00e5ff" strokeWidth="2.6" filter="url(#radar-glow)" />
+        {axes.map((axis, index) => {
+          const value = data.find((item) => item.axis === axis)?.value || 0;
+          const position = point(index, value / 100 * maxRadius);
+          return <circle key={axis} cx={position.x} cy={position.y} r="4.4" fill="#ffd54f" stroke="#07121a" strokeWidth="2" />;
         })}
+        <circle cx={center} cy={center} r="4" fill="#00e5ff" filter="url(#radar-glow)" />
       </svg>
-      {/* Axis labels */}
-      {AXES.map((axis, i) => {
-        const angle = angleForAxis(i, AXES.length);
-        const labelR = MAX_R + 16;
-        const { x, y } = polarToXY(angle, labelR);
-        const dx = x < CX - 5 ? '-100%' : x > CX + 5 ? '0%' : '-50%';
-        return (
-          <span
-            key={axis}
-            className="absolute font-mono text-[9px] text-surface-variant-text tracking-wide uppercase whitespace-nowrap"
-            style={{
-              left: `${(x / SIZE) * 100}%`,
-              top: `${(y / SIZE) * 100}%`,
-              transform: `translate(${dx}, -50%)`,
-              pointerEvents: 'none',
-            }}
-          >
-            {axis}
-          </span>
-        );
+      {axes.map((axis, index) => {
+        const position = point(index, maxRadius + 30);
+        return <span key={axis} style={{ position: 'absolute', left: position.x / size * 100 + '%', top: position.y / size * 100 + '%', transform: 'translate(-50%, -50%)', color: '#a6bdca', fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '.04em', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>{axis}</span>;
       })}
     </div>
   );

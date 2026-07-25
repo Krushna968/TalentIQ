@@ -1,179 +1,120 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import TopNav from '../components/TopNav.jsx';
 import ScoreRing from '../components/ScoreRing.jsx';
 import RadarChart from '../components/RadarChart.jsx';
-import VerificationStamp from '../components/VerificationStamp.jsx';
+import SpaceFabric from '../components/SpaceFabric.jsx';
 
-const card = {
-  background: '#171D22', border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 12, padding: 24, transition: 'background 0.2s'
-};
+const tabs = ['Overview', 'Commits', 'Skills', 'Network'];
+const activities = [
+  ['Merged data-validation improvements into the contributor graph.', '2 hours ago', 'active'],
+  ['AWS Solutions Architect certification was verified at source.', 'Yesterday', 'gold'],
+  ['Completed the advanced graph algorithms learning path.', '3 days ago', ''],
+];
+const commits = [
+  ['feat: add graph signal normalization', 'talentiq/verification-engine · 28 files changed', '2h ago'],
+  ['fix: resolve edge-case in confidence model', 'talentiq/skill-graph · 11 files changed', '1d ago'],
+  ['docs: publish contributor-quality rubric', 'aditi/engineering-notes · 1 file changed', '3d ago'],
+];
+const roadmap = [
+  ['Distributed systems', 'Strengthen systems design signal'],
+  ['Web3 architecture', 'Connect protocol-level proof of work'],
+  ['Applied ML', 'Expand model evaluation fluency'],
+];
+
+function ActivityTimeline() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const update = () => setActiveIndex(Math.min(activities.length - 1, Math.floor(window.scrollY / 220)));
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
+  return activities.map(([copy, time, accent], index) => (
+    <div className="roadmap-item" key={copy} onMouseEnter={() => setActiveIndex(index)}>
+      <i className={'timeline-dot ' + (accent === 'gold' ? 'gold' : '') + (activeIndex === index ? ' active' : '')} />
+      <div><strong>{copy}</strong><span>{time}</span></div>
+    </div>
+  ));
+}
+
+function Overview({ candidate }) {
+  return (
+    <>
+      <section className="glass-panel competency-panel">
+        <div className="panel-heading">
+          <div><div className="eyebrow">Live telemetry</div><h2>Competency Matrix</h2></div>
+          <span className="chip chip-gold">Evidence weighted</span>
+        </div>
+        <div className="hologram"><RadarChart data={candidate.radar} /></div>
+      </section>
+      <section className="verified-grid">
+        {[['code', 'GitHub', 'Connected'], ['workspace_premium', 'Credentials', 'Verified'], ['emoji_events', 'Hackathons', 'Scored'], ['groups', 'Network', 'Mapped']].map(([icon, label, status]) => (
+          <div className="glass-panel glass-panel--interactive verified-card" key={label}>
+            <span className="material-symbols-outlined">{icon}</span><strong>{label}</strong><span className="muted" style={{ display: 'block', marginTop: 4, fontSize: 11 }}>{status}</span>
+          </div>
+        ))}
+      </section>
+    </>
+  );
+}
+
+function CommitsView() {
+  return <section className="glass-panel alternate-view"><div className="eyebrow">Proof of work</div><h2 className="section-heading" style={{ fontSize: 26 }}>Recent verified commits</h2>{commits.map(([title, detail, time], index) => <div className="commit-row" key={title}><i className={'timeline-dot ' + (index === 0 ? 'active' : '')} style={{ position: 'static', marginTop: 4 }} /><div><h3>{title}</h3><p>{detail}</p></div><time>{time}</time></div>)}</section>;
+}
+
+function SkillsView({ candidate }) {
+  return <section className="glass-panel alternate-view"><div className="eyebrow">Skill distribution</div><h2 className="section-heading" style={{ fontSize: 26 }}>Demonstrated technical depth</h2><div className="skill-bars">{candidate.radar.map((item, index) => <div key={item.axis}><div className="skill-label"><span>{item.axis}</span><b>{item.value}%</b></div><div className="skill-track"><div className="skill-fill" style={{ width: item.value + '%', animationDelay: index * 90 + 'ms' }} /></div></div>)}</div></section>;
+}
+
+function NetworkView() {
+  const nodes = [['Aditi', 'central', '45%', '42%'], ['GraphQL', '', '17%', '21%'], ['React', '', '75%', '18%'], ['Node', '', '78%', '68%'], ['AWS', '', '22%', '73%'], ['tRPC', '', '50%', '80%']];
+  return <section className="glass-panel alternate-view"><div className="eyebrow">Neo4j talent graph</div><h2 className="section-heading" style={{ fontSize: 26 }}>Your connected skill network</h2><div className="network-view"><i className="network-line" style={{ left: '49%', top: '50%', width: '35%', transform: 'rotate(-31deg)' }} /><i className="network-line" style={{ left: '49%', top: '50%', width: '33%', transform: 'rotate(-143deg)' }} /><i className="network-line" style={{ left: '49%', top: '50%', width: '34%', transform: 'rotate(36deg)' }} /><i className="network-line" style={{ left: '49%', top: '50%', width: '32%', transform: 'rotate(146deg)' }} />{nodes.map(([label, cls, left, top]) => <span key={label} className={cls} style={{ left, top }}>{label}</span>)}</div></section>;
+}
 
 export default function CandidateDashboard() {
-  const navigate = useNavigate();
   const { candidates } = useApp();
-  const me = candidates[0]; // Aditi Rao
+  const candidate = candidates[0];
+  const [activeTab, setActiveTab] = useState('Overview');
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f1418', color: '#dfe3e9' }}>
+    <div className="space-page">
+      <SpaceFabric className="page-fabric" />
       <TopNav role="candidate" />
-      <main style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 24px', display: 'grid', gridTemplateColumns: '1fr', gap: 24 }}>
-
-        {/* Hero row */}
-        <section style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 32, paddingBottom: 8 }}>
-          <ScoreRing score={me.talentScore} size={140} strokeWidth={8} label="TALENT SCORE" />
-          <div>
-            <h1 style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 'clamp(24px,4vw,40px)', color: '#dfe3e9', margin: 0, marginBottom: 8 }}>
-              {me.name} — {me.title}
-            </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="material-symbols-outlined" style={{ color: '#55d8e7', fontSize: 16 }}>psychology</span>
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 600, color: '#55d8e7', letterSpacing: '0.1em', textTransform: 'uppercase' }}>AI Talent Score</span>
+      <main className="content-wrap dashboard-layout">
+        <section>
+          <header className="glass-panel dashboard-hero">
+            <div>
+              <div className="eyebrow">Personal telemetry center</div>
+              <h1>{candidate.name}</h1>
+              <p>{candidate.title} · Your verified proof-of-work cockpit.</p>
+              <div className="dossier-skills">{candidate.skills.slice(0, 4).map((skill) => <span className="chip" key={skill}>{skill}</span>)}</div>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
-              {me.skills.map(s => (
-                <span key={s} style={{
-                  background: '#1E262C', border: '1px solid rgba(78,70,54,0.4)',
-                  borderRadius: 9999, padding: '4px 12px',
-                  fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 600,
-                  color: '#dfe3e9', letterSpacing: '0.08em', textTransform: 'uppercase'
-                }}>{s}</span>
-              ))}
-            </div>
+            <ScoreRing score={candidate.talentScore} size={138} label="Talent score" />
+          </header>
+          <div className="tab-list" role="tablist" aria-label="Candidate dashboard views">
+            {tabs.map((tab) => <button className={'tab ' + (activeTab === tab ? 'active' : '')} role="tab" aria-selected={activeTab === tab} key={tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}
           </div>
+          {activeTab === 'Overview' && <Overview candidate={candidate} />}
+          {activeTab === 'Commits' && <CommitsView />}
+          {activeTab === 'Skills' && <SkillsView candidate={candidate} />}
+          {activeTab === 'Network' && <NetworkView />}
         </section>
 
-        {/* Main + Sidebar grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,2fr) minmax(0,1fr)', gap: 24 }}>
-
-          {/* Main column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-            {/* Radar card */}
-            <div style={card}
-              onMouseEnter={e => e.currentTarget.style.background = '#1E262C'}
-              onMouseLeave={e => e.currentTarget.style.background = '#171D22'}
-            >
-              <h2 style={{ fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: 20, color: '#dfe3e9', marginBottom: 20 }}>Competency Matrix</h2>
-              <div style={{
-                background: '#0a0f13', border: '1px solid rgba(78,70,54,0.3)',
-                borderRadius: 8, padding: 24, position: 'relative', minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <RadarChart data={me.radar} />
-              </div>
-            </div>
-
-            {/* Verification stamps */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
-              {[
-                { icon: 'code', label: 'GitHub' },
-                { icon: 'work', label: 'LinkedIn' },
-                { icon: 'workspace_premium', label: 'Certs' },
-                { icon: 'emoji_events', label: 'Hackathons' },
-              ].map(({ icon, label }) => (
-                <div key={label} style={{
-                  ...card, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  justifyContent: 'center', gap: 12, padding: 20, position: 'relative'
-                }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#1E262C'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#171D22'}
-                >
-                  <span className="material-symbols-outlined" style={{ color: '#d2c5b0', fontSize: 28 }}>{icon}</span>
-                  <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 600, color: '#dfe3e9', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</span>
-                  <VerificationStamp size={28} className="absolute top-2 right-2" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-            {/* Career Roadmap */}
-            <div style={card}
-              onMouseEnter={e => e.currentTarget.style.background = '#1E262C'}
-              onMouseLeave={e => e.currentTarget.style.background = '#171D22'}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h2 style={{ fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: 18, color: '#dfe3e9', margin: 0 }}>Career Roadmap</h2>
-                <button onClick={() => navigate('/interview')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#55d8e7' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 20 }}>arrow_forward</span>
-                </button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  { icon: 'hub', label: 'Distributed Systems' },
-                  { icon: 'view_in_ar', label: 'Web3 Architecture' },
-                  { icon: 'memory', label: 'Advanced ML Models' },
-                ].map(({ icon, label }) => (
-                  <div key={label} style={{
-                    background: '#0a0f13', border: '1px solid rgba(78,70,54,0.3)',
-                    borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
-                    transition: 'border-color 0.2s'
-                  }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(85,216,231,0.4)'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(78,70,54,0.3)'}
-                  >
-                    <div style={{ width: 36, height: 36, background: 'rgba(85,216,231,0.1)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span className="material-symbols-outlined" style={{ color: '#55d8e7', fontSize: 18 }}>{icon}</span>
-                    </div>
-                    <div>
-                      <div style={{ fontFamily: 'IBM Plex Sans', fontSize: 13, fontWeight: 600, color: '#dfe3e9' }}>{label}</div>
-                      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 600, color: '#d2c5b0', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>Next Skill Target</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div style={card}
-              onMouseEnter={e => e.currentTarget.style.background = '#1E262C'}
-              onMouseLeave={e => e.currentTarget.style.background = '#171D22'}
-            >
-              <h2 style={{ fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: 18, color: '#dfe3e9', marginBottom: 16, margin: '0 0 16px' }}>Recent Activity</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {[
-                  { dot: '#55d8e7', glow: true, text: 'Merged PR #4592 to Core Repository', time: '2 HOURS AGO' },
-                  { dot: '#e8b84b', text: 'AWS Solutions Architect Cert Verified', time: '1 DAY AGO' },
-                  { dot: '#30353a', border: true, text: 'Completed Data Structures Module', time: '3 DAYS AGO' },
-                ].map(({ dot, glow, text, time, border }, i) => (
-                  <div key={i} style={{ position: 'relative', paddingLeft: 20, paddingBottom: i < 2 ? 20 : 0, borderLeft: i < 2 ? '1px solid rgba(78,70,54,0.3)' : '1px solid transparent' }}>
-                    <div style={{
-                      position: 'absolute', left: -5, top: 4, width: 10, height: 10,
-                      borderRadius: '50%', background: dot,
-                      border: border ? '1px solid rgba(78,70,54,0.4)' : 'none',
-                      boxShadow: glow ? '0 0 8px rgba(85,216,231,0.6)' : 'none'
-                    }} />
-                    <div style={{ fontFamily: 'IBM Plex Sans', fontSize: 13, color: '#dfe3e9' }}>{text}</div>
-                    <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 600, color: '#d2c5b0', letterSpacing: '0.1em', marginTop: 4, textTransform: 'uppercase' }}>{time}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <aside className="side-stack">
+          <section className="glass-panel side-card">
+            <div className="panel-heading"><div><div className="eyebrow">Growth signal</div><h2>Career Roadmap</h2></div><Link to="/interview" className="icon-button" aria-label="Practice for your next assessment"><span className="material-symbols-outlined">arrow_outward</span></Link></div>
+            <div style={{ marginTop: 12 }}>{roadmap.map(([name, detail], index) => <div className="roadmap-item" key={name}><i className={'timeline-dot ' + (index === 0 ? 'active' : '')} /><div><strong>{name}</strong><span>{detail}</span></div></div>)}</div>
+          </section>
+          <section className="glass-panel side-card">
+            <div className="eyebrow">Activity stream</div>
+            <h2 className="font-space" style={{ margin: '10px 0 9px', fontSize: 20, letterSpacing: '-.03em' }}>Recent activity</h2>
+            <div>{<ActivityTimeline />}</div>
+          </section>
+        </aside>
       </main>
-
-      {/* Footer */}
-      <footer style={{ borderTop: '1px solid rgba(78,70,54,0.2)', marginTop: 40 }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: '#d2c5b0', letterSpacing: '0.1em' }}>© 2024 TalentIQ. AI · VALIDATED</span>
-          <div style={{ display: 'flex', gap: 20 }}>
-            {['Terms', 'Privacy', 'Documentation', 'Support'].map(l => (
-              <a key={l} href="#" style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: '#d2c5b0', textDecoration: 'none', letterSpacing: '0.08em' }}>{l}</a>
-            ))}
-          </div>
-        </div>
-      </footer>
-
-      <style>{`
-        @media (max-width: 768px) {
-          main > div:last-child { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,64 +1,50 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+
+const linksByRole = {
+  candidate: [
+    { label: 'Overview', to: '/candidate' },
+    { label: 'Practice', to: '/interview' },
+    { label: 'Talent Explorer', to: '/recruiter' },
+  ],
+  recruiter: [
+    { label: 'Talent Search', to: '/recruiter' },
+    { label: 'Candidate Cockpit', to: '/candidate' },
+    { label: 'Featured Dossier', to: '/report/elena-rodriguez' },
+  ],
+};
 
 export default function TopNav({ role = 'candidate' }) {
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const isActive = (path) => location.pathname === path;
-
-  const candidateLinks = [
-    { label: 'Dashboard', path: '/candidate' },
-    { label: 'Interview', path: '/interview' },
-    { label: 'Reports', path: '#' },
-    { label: 'Verify', path: '#' },
-  ];
-
-  const recruiterLinks = [
-    { label: 'Dashboard', path: '/candidate' },
-    { label: 'Talent Search', path: '/recruiter' },
-    { label: 'Reports', path: '#' },
-    { label: 'Verify', path: '#' },
-  ];
-
-  const links = role === 'recruiter' ? recruiterLinks : candidateLinks;
+  const links = linksByRole[role] || linksByRole.candidate;
+  const initials = role === 'recruiter' ? 'RC' : 'AR';
 
   return (
-    <header className="bg-surface/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
-      <div className="flex justify-between items-center w-full px-6 max-w-7xl mx-auto h-16">
-        <div className="flex items-center gap-8">
-          <button
-            onClick={() => navigate('/')}
-            className="font-bold text-primary text-xl tracking-tight font-space"
-          >
-            TalentIQ
+    <header className="top-nav">
+      <div className="top-nav-inner">
+        <Link className="brand" to="/" aria-label="TalentIQ home">
+          <span className="brand-mark" aria-hidden="true" />
+          <span>TalentIQ</span>
+        </Link>
+
+        <nav className="nav-links" aria-label="Primary navigation">
+          {links.map((link) => (
+            <NavLink key={link.to} to={link.to} end={link.to === '/candidate' || link.to === '/recruiter'} className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="nav-actions">
+          <button className="icon-button" type="button" aria-label="Notifications">
+            <span className="material-symbols-outlined">notifications</span>
           </button>
-          <nav className="hidden md:flex gap-1">
-            {links.map(link => (
-              <button
-                key={link.label}
-                onClick={() => link.path !== '#' && navigate(link.path)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide font-plex transition-all ${
-                  isActive(link.path)
-                    ? 'text-primary border-b-2 border-primary'
-                    : 'text-surface-variant-text hover:text-primary hover:bg-surface-high'
-                }`}
-              >
-                {link.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="text-surface-variant-text hover:text-primary transition-colors p-2 rounded-lg hover:bg-surface-high">
-            <span className="material-symbols-outlined text-[22px]">notifications</span>
+          <button className="icon-button" type="button" aria-label="Settings">
+            <span className="material-symbols-outlined">settings</span>
           </button>
-          <button className="text-surface-variant-text hover:text-primary transition-colors p-2 rounded-lg hover:bg-surface-high">
-            <span className="material-symbols-outlined text-[22px]">settings</span>
+          <button className="profile-avatar" type="button" title="Open dashboard" onClick={() => navigate(role === 'recruiter' ? '/recruiter' : '/candidate')}>
+            {initials}
           </button>
-          <div className="w-8 h-8 rounded-full bg-primary-container/30 border border-primary-container/50 flex items-center justify-center text-primary text-xs font-bold">
-            {role === 'recruiter' ? 'RC' : 'AR'}
-          </div>
         </div>
       </div>
     </header>
