@@ -1,16 +1,17 @@
 import React from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { ROUTES } from '../routes/paths.js';
 
 const linksByRole = {
   candidate: [
-    { label: 'Overview', to: '/candidate' },
-    { label: 'Practice', to: '/interview' },
-    { label: 'Talent Explorer', to: '/recruiter' },
+    { label: 'Overview', to: ROUTES.CANDIDATE_OVERVIEW },
+    { label: 'Practice', to: ROUTES.INTERVIEW },
+    { label: 'My Identity', to: ROUTES.CANDIDATE_PROFILE },
   ],
   recruiter: [
-    { label: 'Talent Search', to: '/recruiter' },
-    { label: 'Candidate Cockpit', to: '/candidate' },
-    { label: 'Featured Dossier', to: '/report/elena-rodriguez' },
+    { label: 'Talent Search', to: ROUTES.RECRUITER_SEARCH },
+    { label: 'Pipeline', to: ROUTES.RECRUITER_PIPELINE },
+    { label: 'Compare', to: ROUTES.RECRUITER_COMPARE },
   ],
 };
 
@@ -29,7 +30,7 @@ export default function TopNav({ role = 'candidate' }) {
 
         <nav className="nav-links" aria-label="Primary navigation">
           {links.map((link) => (
-            <NavLink key={link.to} to={link.to} end={link.to === '/candidate' || link.to === '/recruiter'} className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
+            <NavLink key={link.to} to={link.to} end={link.to === ROUTES.CANDIDATE_OVERVIEW || link.to === ROUTES.RECRUITER_SEARCH} className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
               {link.label}
             </NavLink>
           ))}
@@ -42,7 +43,7 @@ export default function TopNav({ role = 'candidate' }) {
           <button className="icon-button" type="button" aria-label="Settings">
             <span className="material-symbols-outlined">settings</span>
           </button>
-          <button className="profile-avatar" type="button" title="Open dashboard" onClick={() => navigate(role === 'recruiter' ? '/recruiter' : '/candidate')}>
+          <button className="profile-avatar" type="button" title="Open dashboard" onClick={() => navigate(role === 'recruiter' ? ROUTES.RECRUITER_SEARCH : ROUTES.CANDIDATE_OVERVIEW)}>
             {initials}
           </button>
         </div>
