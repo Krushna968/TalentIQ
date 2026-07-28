@@ -1,0 +1,30 @@
+import { Router } from 'express';
+import authRoutes from './auth.routes.js';
+import candidateRoutes from './candidate.routes.js';
+import recruiterRoutes from './recruiter.routes.js';
+import verificationRoutes from './verification.routes.js';
+import matchingRoutes from './matching.routes.js';
+import analyticsRoutes from './analytics.routes.js';
+import interviewRoutes from './interview.routes.js';
+import reportRoutes from './report.routes.js';
+import teamRoutes from './team.routes.js';
+import presentationRoutes from './presentation.routes.js';
+import hackathonRoutes from './hackathon.routes.js';
+import trustRoutes from './trust.routes.js';
+
+const routes = Router();
+
+routes.use('/auth', authRoutes);
+routes.use('/candidates', candidateRoutes);
+routes.use('/recruiters', recruiterRoutes);
+routes.use('/verification', verificationRoutes);
+routes.use('/matching', matchingRoutes);
+routes.use('/analytics', analyticsRoutes);
+routes.use('/interviews', interviewRoutes);
+routes.use('/reports', reportRoutes);
+routes.use('/team-contributions', teamRoutes);
+routes.use('/presentations', presentationRoutes);
+routes.use('/hackathons', hackathonRoutes);
+routes.use('/trust', trustRoutes);
+
+export { routes };

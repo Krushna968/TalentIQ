@@ -1,0 +1,9 @@
+{
+  "name": "TalentIQ",
+  "description": "AI-Verified Talent Intelligence Platform — React 19 frontend + Node.js/Express backend",
+  "version": "1.0.0",
+  "instructions": "Read AGENTS.md first. Frontend in /frontend, backend in /backend. Run frontend with 'cd frontend && npm run dev'.",
+  "skills": {
+    "include": []
+  }
+}
