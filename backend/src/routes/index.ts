@@ -11,11 +11,13 @@ import teamRoutes from './team.routes.js';
 import presentationRoutes from './presentation.routes.js';
 import hackathonRoutes from './hackathon.routes.js';
 import trustRoutes from './trust.routes.js';
+import githubRoutes from './github.routes.js';
 
 const routes = Router();
 
 routes.use('/auth', authRoutes);
 routes.use('/candidates', candidateRoutes);
+routes.use('/candidates', githubRoutes);
 routes.use('/recruiters', recruiterRoutes);
 routes.use('/verification', verificationRoutes);
 routes.use('/matching', matchingRoutes);

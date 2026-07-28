@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
+import { githubApi } from '../lib/api.js';
 import TopNav from '../components/TopNav.jsx';
 import ScoreRing from '../components/ScoreRing.jsx';
 import RadarChart from '../components/RadarChart.jsx';
 import SpaceFabric from '../components/SpaceFabric.jsx';
 
-const tabs = ['Overview', 'Commits', 'Skills', 'Network'];
+const tabs = ['Overview', 'GitHub', 'Commits', 'Skills', 'Network'];
 const activities = [
   ['Merged data-validation improvements into the contributor graph.', '2 hours ago', 'active'],
   ['AWS Solutions Architect certification was verified at source.', 'Yesterday', 'gold'],
@@ -61,6 +62,143 @@ function Overview({ candidate }) {
   );
 }
 
+function GitHubTab({ candidateId }) {
+  const [status, setStatus] = useState('loading');
+  const [profile, setProfile] = useState(null);
+  const [message, setMessage] = useState('');
+  const [connecting, setConnecting] = useState(false);
+
+  useEffect(() => {
+    githubApi.checkConnection(candidateId)
+      .then((data) => {
+        if (data.connected) {
+          setStatus('connected');
+          setProfile(data.profile);
+          return githubApi.getProfile(candidateId).then((p) => setProfile(p));
+        }
+        setStatus('disconnected');
+      })
+      .catch(() => setStatus('disconnected'));
+  }, [candidateId]);
+
+  const handleConnect = async () => {
+    setConnecting(true);
+    try {
+      const data = await githubApi.getOAuthUrl();
+      window.location.href = data.url;
+    } catch (err) {
+      setConnecting(false);
+      setMessage('Failed to initiate GitHub connection');
+    }
+  };
+
+  const handleSync = async () => {
+    setMessage('Syncing...');
+    try {
+      await githubApi.triggerSync(candidateId);
+      const p = await githubApi.getProfile(candidateId);
+      setProfile(p);
+      setMessage('Sync completed');
+    } catch (err) {
+      console.error('Sync error:', err);
+      setMessage('Sync failed: ' + err.message);
+    }
+  };
+
+  if (status === 'loading') {
+    return <section className="glass-panel" style={{ padding: 32, textAlign: 'center' }}><p className="muted">Checking GitHub connection...</p></section>;
+  }
+
+  if (status === 'disconnected') {
+    return (
+      <section className="glass-panel" style={{ padding: 32, textAlign: 'center' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 48, marginBottom: 12, opacity: 0.5 }}>code</span>
+        <h2 style={{ marginBottom: 8 }}>Connect GitHub</h2>
+        <p className="muted" style={{ marginBottom: 20, maxWidth: 400, margin: '0 auto 20px' }}>
+          Link your GitHub account to automatically surface your repos, commits, and language data as verified signals on your talent profile.
+        </p>
+        <button className="btn btn-primary" onClick={handleConnect} disabled={connecting} style={{ opacity: connecting ? 0.7 : 1, cursor: connecting ? 'wait' : 'pointer' }}>
+          {connecting ? (
+            <><span className="material-symbols-outlined" style={{ fontSize: 18, animation: 'spin 1s linear infinite' }}>sync</span> Redirecting to GitHub...</>
+          ) : (
+            <><span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span> Connect GitHub Account</>
+          )}
+        </button>
+        {message && <p className="muted" style={{ marginTop: 12 }}>{message}</p>}
+      </section>
+    );
+  }
+
+  return (
+    <section className="glass-panel">
+      <div className="panel-heading">
+        <div>
+          <div className="eyebrow">Connected source</div>
+          <h2>GitHub Profile</h2>
+        </div>
+        <button className="btn btn-secondary" onClick={handleSync} style={{ fontSize: 12, padding: '6px 14px' }}>
+          Re-sync
+        </button>
+      </div>
+
+      {profile && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            {profile.avatarUrl && <img src={profile.avatarUrl} alt="" style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid rgba(255,215,0,0.3)' }} />}
+            <div>
+              <strong style={{ fontSize: 18 }}>{profile.name || profile.githubUsername}</strong>
+              <p className="muted">@{profile.githubUsername}</p>
+              {profile.bio && <p style={{ fontSize: 13, marginTop: 4 }}>{profile.bio}</p>}
+            </div>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 24, textAlign: 'center' }}>
+              <div><strong>{profile.publicRepos ?? '-'}</strong><p className="muted" style={{ fontSize: 11 }}>Repos</p></div>
+              <div><strong>{profile.followers ?? '-'}</strong><p className="muted" style={{ fontSize: 11 }}>Followers</p></div>
+              <div><strong>{profile.following ?? '-'}</strong><p className="muted" style={{ fontSize: 11 }}>Following</p></div>
+            </div>
+          </div>
+
+          {profile.languageSummary?.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{ fontSize: 14, marginBottom: 12, opacity: 0.7 }}>Languages</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {profile.languageSummary.map((lang) => (
+                  <span className="chip" key={lang.language}>
+                    {lang.language} {lang.percentage ? `${lang.percentage}%` : ''}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {profile.repos?.length > 0 && (
+            <div>
+              <h3 style={{ fontSize: 14, marginBottom: 12, opacity: 0.7 }}>Top Repositories</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {profile.repos.slice(0, 10).map((repo) => (
+                  <div key={repo.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.03)' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 18, opacity: 0.5 }}>folder</span>
+                    <div style={{ flex: 1 }}>
+                      <a href={repo.url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
+                        <strong>{repo.name}</strong>
+                      </a>
+                      {repo.description && <p className="muted" style={{ fontSize: 12 }}>{repo.description}</p>}
+                    </div>
+                    <div style={{ display: 'flex', gap: 12, fontSize: 12, opacity: 0.6 }}>
+                      {repo.language && <span>{repo.language}</span>}
+                      <span>★ {repo.stars}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+      {message && <p className="muted" style={{ marginTop: 12, textAlign: 'center' }}>{message}</p>}
+    </section>
+  );
+}
+
 function CommitsView() {
   return <section className="glass-panel alternate-view"><div className="eyebrow">Proof of work</div><h2 className="section-heading" style={{ fontSize: 26 }}>Recent verified commits</h2>{commits.map(([title, detail, time], index) => <div className="commit-row" key={title}><i className={'timeline-dot ' + (index === 0 ? 'active' : '')} style={{ position: 'static', marginTop: 4 }} /><div><h3>{title}</h3><p>{detail}</p></div><time>{time}</time></div>)}</section>;
 }
@@ -78,6 +216,27 @@ export default function CandidateDashboard() {
   const { candidates } = useApp();
   const candidate = candidates[0];
   const [activeTab, setActiveTab] = useState('Overview');
+  const [searchParams] = useSearchParams();
+  const [notification, setNotification] = useState('');
+
+  useEffect(() => {
+    const gh = searchParams.get('github');
+    if (gh === 'connected') {
+      setNotification(`GitHub connected as ${searchParams.get('user') || ''}`);
+      setActiveTab('GitHub');
+      window.history.replaceState({}, '', '/candidate');
+    } else if (gh === 'error') {
+      setNotification('GitHub connection failed. Please try again.');
+      window.history.replaceState({}, '', '/candidate');
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (notification) {
+      const t = setTimeout(() => setNotification(''), 5000);
+      return () => clearTimeout(t);
+    }
+  }, [notification]);
 
   return (
     <div className="space-page">
@@ -85,6 +244,11 @@ export default function CandidateDashboard() {
       <TopNav role="candidate" />
       <main className="content-wrap dashboard-layout">
         <section>
+          {notification && (
+            <div className="glass-panel" style={{ padding: '12px 20px', marginBottom: 16, borderLeft: '3px solid rgb(255,215,0)' }}>
+              {notification}
+            </div>
+          )}
           <header className="glass-panel dashboard-hero">
             <div>
               <div className="eyebrow">Personal telemetry center</div>
@@ -98,6 +262,7 @@ export default function CandidateDashboard() {
             {tabs.map((tab) => <button className={'tab ' + (activeTab === tab ? 'active' : '')} role="tab" aria-selected={activeTab === tab} key={tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}
           </div>
           {activeTab === 'Overview' && <Overview candidate={candidate} />}
+          {activeTab === 'GitHub' && <GitHubTab candidateId={candidate.id} />}
           {activeTab === 'Commits' && <CommitsView />}
           {activeTab === 'Skills' && <SkillsView candidate={candidate} />}
           {activeTab === 'Network' && <NetworkView />}

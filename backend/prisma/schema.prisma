@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Candidate {
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  avatar          String?
+  role            String   @default("candidate")
+  title           String?
+  location        String?
+  bio             String?
+
+  githubConnected Boolean  @default(false)
+
+  talentScore     Float?
+  githubScore     Float?
+  hackathonScore  Float?
+  certScore       Float?
+  presentationScore Float?
+  openSourceScore Float?
+  socialScore     Float?
+  status          String?
+
+  radarData       String?
+  signals         String?
+
+  githubConnection GithubConnection?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model GithubConnection {
+  id              String   @id @default(cuid())
+  candidateId     String   @unique
+  candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  githubUsername   String
+  githubId         Int?
+  accessToken      String
+  refreshToken     String?
+  tokenExpiresAt   DateTime?
+
+  avatarUrl       String?
+  name            String?
+  bio             String?
+  company         String?
+  location        String?
+  publicRepos     Int?
+  followers       Int?
+  following       Int?
+
+  connectedAt     DateTime @default(now())
+  lastSyncedAt    DateTime?
+  syncStatus      String   @default("pending")
+
+  repos           GithubRepo[]
+  languageSummary GithubLanguageSummary[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model GithubRepo {
+  id                 String   @id @default(cuid())
+  githubConnectionId String
+  connection         GithubConnection @relation(fields: [githubConnectionId], references: [id], onDelete: Cascade)
+
+  githubId           Int      @unique
+  name               String
+  fullName           String
+  description        String?
+  url                String
+  homepage           String?
+
+  language           String?
+  topics             String?
+
+  stars              Int      @default(0)
+  forks              Int      @default(0)
+  openIssues         Int      @default(0)
+  size               Int      @default(0)
+
+  isFork             Boolean  @default(false)
+  isArchived         Boolean  @default(false)
+  isPrivate          Boolean  @default(false)
+
+  pushedAt           DateTime?
+  repoCreatedAt      DateTime?
+  repoUpdatedAt      DateTime?
+
+  commits            GithubCommit[]
+  languages          GithubRepoLanguage[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model GithubCommit {
+  id          String   @id @default(cuid())
+  repoId      String
+  repo        GithubRepo @relation(fields: [repoId], references: [id], onDelete: Cascade)
+
+  sha         String
+  message     String
+  authorName  String?
+  authorEmail String?
+
+  committedAt DateTime
+  additions   Int?
+  deletions   Int?
+
+  createdAt   DateTime @default(now())
+
+  @@unique([repoId, sha])
+}
+
+model GithubRepoLanguage {
+  id       String @id @default(cuid())
+  repoId   String
+  repo     GithubRepo @relation(fields: [repoId], references: [id], onDelete: Cascade)
+
+  language String
+  bytes    Int
+  percentage Float?
+
+  @@unique([repoId, language])
+}
+
+model GithubLanguageSummary {
+  id                 String @id @default(cuid())
+  githubConnectionId String
+  connection         GithubConnection @relation(fields: [githubConnectionId], references: [id], onDelete: Cascade)
+
+  language           String
+  totalBytes         Int
+  percentage         Float?
+  repoCount          Int
+
+  @@unique([githubConnectionId, language])
+}
