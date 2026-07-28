@@ -4,6 +4,6 @@ dist/
 *.log
 .DS_Store
 coverage/
-src/generated/
+generated/
 *.db
 *.db-journal
