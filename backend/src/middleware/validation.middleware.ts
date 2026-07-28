@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
-export const validate = (schema: string) => {
-  return (req: Request, res: Response, next: NextFunction) => {};
+export const validate = (_schema: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    next();
+  };
 };
