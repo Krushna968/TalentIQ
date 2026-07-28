@@ -20,8 +20,6 @@
     "db:setup": "prisma migrate deploy && tsx scripts/seed.ts"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
     "@types/node": "^26.1.2",
     "tsx": "^4.23.1",
     "typescript": "^7.0.2",
@@ -32,6 +30,8 @@
     "@prisma/adapter-libsql": "^7.9.1",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/pg": "^8.20.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
