@@ -1,5 +1,6 @@
 import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
+import { calculateAndStoreTalentScore } from './talent-score.service.js';
 
 const GITHUB_API = 'https://api.github.com';
 
@@ -204,6 +205,7 @@ export async function syncCandidateFromGitHub(candidateId: string, token: string
     });
   }
 
+  await calculateAndStoreTalentScore(candidateId);
   return connection;
 }
 

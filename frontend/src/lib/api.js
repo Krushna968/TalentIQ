@@ -19,8 +19,20 @@ export const api = {
 };
 
 export const githubApi = {
-  getOAuthUrl: () => api.get('/auth/github'),
+  getOAuthUrl: (candidateId) => api.get(`/auth/github?candidateId=${encodeURIComponent(candidateId)}`),
   checkConnection: (candidateId) => api.get(`/candidates/${candidateId}/github/check`),
   getProfile: (candidateId) => api.get(`/candidates/${candidateId}/github/profile`),
   triggerSync: (candidateId) => api.post(`/candidates/${candidateId}/github/sync`),
+  getTalentScore: (candidateId) => api.get(`/candidates/${candidateId}/talent-score`),
+};
+
+export const linkedInApi = {
+  getOAuthUrl: (candidateId) => api.get(`/auth/linkedin?candidateId=${encodeURIComponent(candidateId)}`),
+  createPreviewConnection: (candidateId) => api.post('/auth/linkedin/preview', { candidateId }),
+  checkConnection: (candidateId) => api.get(`/candidates/${candidateId}/linkedin/check`),
+};
+
+export const evidenceApi = {
+  list: (candidateId) => api.get(`/candidates/${candidateId}/evidence`),
+  submit: (candidateId, evidence) => api.post(`/candidates/${candidateId}/evidence`, evidence),
 };

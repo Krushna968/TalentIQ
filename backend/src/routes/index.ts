@@ -12,12 +12,14 @@ import presentationRoutes from './presentation.routes.js';
 import hackathonRoutes from './hackathon.routes.js';
 import trustRoutes from './trust.routes.js';
 import githubRoutes from './github.routes.js';
+import evidenceRoutes from './evidence.routes.js';
 
 const routes = Router();
 
 routes.use('/auth', authRoutes);
 routes.use('/candidates', candidateRoutes);
 routes.use('/candidates', githubRoutes);
+routes.use('/candidates/:candidateId/evidence', evidenceRoutes);
 routes.use('/recruiters', recruiterRoutes);
 routes.use('/verification', verificationRoutes);
 routes.use('/matching', matchingRoutes);

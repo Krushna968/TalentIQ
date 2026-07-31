@@ -2,17 +2,32 @@ import { Request, Response } from 'express';
 import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import * as githubService from '../services/github.service.js';
+import { createGitHubOAuthState, verifyGitHubOAuthState } from '../services/github-oauth-state.service.js';
 
-export const initiateOAuth = (_req: Request, res: Response) => {
-  const state = crypto.randomUUID();
+export const initiateOAuth = async (req: Request, res: Response) => {
+  const candidateId = req.query.candidateId as string | undefined;
+  if (!candidateId) {
+    res.status(400).json({ error: 'A candidateId is required to connect GitHub.' });
+    return;
+  }
+
+  const candidate = await prisma.candidate.findUnique({ where: { id: candidateId }, select: { id: true } });
+  if (!candidate) {
+    res.status(404).json({ error: 'Candidate not found.' });
+    return;
+  }
+
+  // When production login replaces the demo session, candidateId must come from req.user, not the query string.
+  const state = createGitHubOAuthState(candidate.id);
   const url = githubService.getOAuthUrl(state);
-  res.json({ url, state });
+  res.json({ url });
 };
 
 export const handleCallback = async (req: Request, res: Response) => {
   const code = req.query.code as string | undefined;
-  if (!code) {
-    res.redirect(`${env.FRONTEND_URL}/candidate?github=error&message=no_code`);
+  const state = verifyGitHubOAuthState(req.query.state as string | undefined);
+  if (!code || !state) {
+    res.redirect(`${env.FRONTEND_URL}/candidate?github=error&message=invalid_oauth_state`);
     return;
   }
 
@@ -25,9 +40,7 @@ export const handleCallback = async (req: Request, res: Response) => {
     }
 
     const ghUser = await githubService.fetchGitHubUser(accessToken);
-    const candidate = await prisma.candidate.findFirst({
-      include: { githubConnection: true },
-    });
+    const candidate = await prisma.candidate.findUnique({ where: { id: state.candidateId } });
     if (!candidate) {
       res.redirect(`${env.FRONTEND_URL}/candidate?github=error&message=no_candidate`);
       return;

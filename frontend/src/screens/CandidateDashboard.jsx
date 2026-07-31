@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
-import { githubApi } from '../lib/api.js';
+import { evidenceApi, githubApi, linkedInApi } from '../lib/api.js';
 import TopNav from '../components/TopNav.jsx';
 import ScoreRing from '../components/ScoreRing.jsx';
 import RadarChart from '../components/RadarChart.jsx';
 import SpaceFabric from '../components/SpaceFabric.jsx';
 
-const tabs = ['Overview', 'GitHub', 'Commits', 'Skills', 'Network'];
+const tabs = ['Overview', 'GitHub', 'LinkedIn', 'Evidence', 'Commits', 'Skills', 'Network'];
 const activities = [
   ['Merged data-validation improvements into the contributor graph.', '2 hours ago', 'active'],
   ['AWS Solutions Architect certification was verified at source.', 'Yesterday', 'gold'],
@@ -62,11 +62,12 @@ function Overview({ candidate }) {
   );
 }
 
-function GitHubTab({ candidateId }) {
+function GitHubTab({ candidateId, onScore }) {
   const [status, setStatus] = useState('loading');
   const [profile, setProfile] = useState(null);
   const [message, setMessage] = useState('');
   const [connecting, setConnecting] = useState(false);
+  const [talentScore, setTalentScore] = useState(null);
 
   useEffect(() => {
     githubApi.checkConnection(candidateId)
@@ -74,7 +75,8 @@ function GitHubTab({ candidateId }) {
         if (data.connected) {
           setStatus('connected');
           setProfile(data.profile);
-          return githubApi.getProfile(candidateId).then((p) => setProfile(p));
+          return Promise.all([githubApi.getProfile(candidateId), githubApi.getTalentScore(candidateId)])
+            .then(([p, score]) => { setProfile(p); setTalentScore(score); onScore?.(score); });
         }
         setStatus('disconnected');
       })
@@ -84,7 +86,7 @@ function GitHubTab({ candidateId }) {
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      const data = await githubApi.getOAuthUrl();
+      const data = await githubApi.getOAuthUrl(candidateId);
       window.location.href = data.url;
     } catch (err) {
       setConnecting(false);
@@ -96,8 +98,10 @@ function GitHubTab({ candidateId }) {
     setMessage('Syncing...');
     try {
       await githubApi.triggerSync(candidateId);
-      const p = await githubApi.getProfile(candidateId);
+      const [p, score] = await Promise.all([githubApi.getProfile(candidateId), githubApi.getTalentScore(candidateId)]);
       setProfile(p);
+      setTalentScore(score);
+      onScore?.(score);
       setMessage('Sync completed');
     } catch (err) {
       console.error('Sync error:', err);
@@ -157,6 +161,19 @@ function GitHubTab({ candidateId }) {
             </div>
           </div>
 
+          {talentScore && (
+            <div style={{ marginBottom: 24, padding: 16, borderRadius: 10, background: 'rgba(0,229,255,0.05)', border: '1px solid rgba(0,229,255,0.18)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+                <div><div className="eyebrow">Evidence-calculated</div><strong>Talent Score</strong></div>
+                <strong style={{ color: '#00e5ff', fontSize: 28 }}>{talentScore.score}<span className="muted" style={{ fontSize: 13 }}>/100</span></strong>
+              </div>
+              <p className="muted" style={{ fontSize: 12, marginBottom: 10 }}>Confidence: {talentScore.confidence}% · based on {talentScore.evidence.repositories} repositories, {talentScore.evidence.commits} sampled commits, and {talentScore.evidence.languages} languages.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 8 }}>
+                {talentScore.components.map((component) => <div key={component.key} style={{ fontSize: 12 }}><span className="muted">{component.label}</span><strong style={{ display: 'block' }}>{component.score}/{component.max}</strong></div>)}
+              </div>
+            </div>
+          )}
+
           {profile.languageSummary?.length > 0 && (
             <div style={{ marginBottom: 24 }}>
               <h3 style={{ fontSize: 14, marginBottom: 12, opacity: 0.7 }}>Languages</h3>
@@ -199,6 +216,97 @@ function GitHubTab({ candidateId }) {
   );
 }
 
+function LinkedInTab({ candidateId }) {
+  const [status, setStatus] = useState('loading');
+  const [profile, setProfile] = useState(null);
+  const [message, setMessage] = useState('');
+  const [connecting, setConnecting] = useState(false);
+
+  useEffect(() => {
+    linkedInApi.checkConnection(candidateId)
+      .then(({ connected, profile: data }) => { setStatus(connected ? 'connected' : 'disconnected'); setProfile(data); })
+      .catch(() => setStatus('disconnected'));
+  }, [candidateId]);
+
+  const connect = async () => {
+    setConnecting(true);
+    try {
+      const { url, mode } = await linkedInApi.getOAuthUrl(candidateId);
+      if (mode === 'preview') {
+        const result = await linkedInApi.createPreviewConnection(candidateId);
+        setProfile(result.profile);
+        setStatus('connected');
+        setMessage('Professional profile connected.');
+        return;
+      }
+      window.location.href = url;
+    } catch (error) {
+      setConnecting(false);
+      setMessage(error.message || 'LinkedIn connection is unavailable.');
+    }
+  };
+
+  if (status === 'loading') return <section className="glass-panel" style={{ padding: 32, textAlign: 'center' }}><p className="muted">Checking LinkedIn connection...</p></section>;
+
+  return <section className="glass-panel" style={{ padding: 32, textAlign: 'center' }}>
+    <span className="material-symbols-outlined" style={{ fontSize: 48, marginBottom: 12, color: '#79c7ff' }}>badge</span>
+    <div className="eyebrow">Professional identity</div>
+    <h2 style={{ margin: '8px 0' }}>{status === 'connected' ? 'LinkedIn verified' : 'Connect LinkedIn'}</h2>
+    {status === 'connected' ? <>
+      {profile?.avatarUrl && <img src={profile.avatarUrl} alt="" style={{ width: 58, height: 58, borderRadius: '50%', margin: '10px auto' }} />}
+      <p className="muted">{profile?.name || 'Professional identity'}{profile?.email ? ` · ${profile.email}` : ''}</p>
+      <p className="muted" style={{ fontSize: 12 }}>Connected {profile?.connectedAt ? new Date(profile.connectedAt).toLocaleDateString() : ''}. Identity evidence is included in score confidence.</p>
+      {profile?.syncStatus === 'preview' && <span className="chip" style={{ marginTop: 8 }}>Connection preview</span>}
+    </> : <>
+      <p className="muted" style={{ maxWidth: 470, margin: '0 auto 20px' }}>Verify your professional identity with LinkedIn. TalentIQ only requests basic profile and email permissions.</p>
+      <button className="btn btn-primary" onClick={connect} disabled={connecting} style={{ opacity: connecting ? 0.7 : 1 }}>
+        {connecting ? 'Redirecting to LinkedIn...' : 'Connect LinkedIn Account'}
+      </button>
+    </>}
+    {message && <p className="muted" style={{ marginTop: 12 }}>{message}</p>}
+  </section>;
+}
+
+function EvidenceTab({ candidateId }) {
+  const [evidence, setEvidence] = useState([]);
+  const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ source: 'credential', title: '', issuer: '', referenceUrl: '' });
+
+  const loadEvidence = () => evidenceApi.list(candidateId).then(({ evidence: records }) => setEvidence(records)).catch(() => setMessage('Unable to load evidence.'));
+  useEffect(() => { loadEvidence(); }, [candidateId]);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setSaving(true); setMessage('');
+    try {
+      await evidenceApi.submit(candidateId, form);
+      setForm({ source: 'credential', title: '', issuer: '', referenceUrl: '' });
+      setMessage('Evidence submitted for verification. It will affect your score only after approval.');
+      await loadEvidence();
+    } catch (error) { setMessage(error.message || 'Unable to submit evidence.'); }
+    finally { setSaving(false); }
+  };
+
+  return <section className="glass-panel" style={{ padding: 28 }}>
+    <div className="panel-heading"><div><div className="eyebrow">Verified evidence</div><h2>Credentials, achievements & assessments</h2></div></div>
+    <p className="muted" style={{ margin: '0 0 18px', fontSize: 13 }}>Add a public proof URL for credentials, hackathons, presentations, assessments, or interview results. Only verified records contribute to your Talent Score.</p>
+    <form onSubmit={submit} style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+      <select value={form.source} onChange={(event) => setForm({ ...form, source: event.target.value })}>
+        <option value="credential">Credential</option><option value="hackathon">Hackathon</option><option value="assessment">Assessment</option><option value="interview">Interview</option><option value="presentation">Presentation</option>
+      </select>
+      <input required value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Title or achievement" />
+      <input value={form.issuer} onChange={(event) => setForm({ ...form, issuer: event.target.value })} placeholder="Issuer or organiser" />
+      <input type="url" value={form.referenceUrl} onChange={(event) => setForm({ ...form, referenceUrl: event.target.value })} placeholder="Public verification URL" />
+      <button className="btn btn-primary" type="submit" disabled={saving} style={{ gridColumn: '1 / -1', justifyContent: 'center' }}>{saving ? 'Submitting...' : 'Submit for verification'}</button>
+    </form>
+    {message && <p className="muted" style={{ marginTop: 14 }}>{message}</p>}
+    <div style={{ marginTop: 24, display: 'grid', gap: 8 }}>
+      {evidence.length === 0 ? <p className="muted" style={{ fontSize: 13 }}>No submitted evidence yet.</p> : evidence.map((item) => <div key={item.id} style={{ padding: '11px 14px', background: 'rgba(255,255,255,.03)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', gap: 12 }}><div><strong>{item.title}</strong><p className="muted" style={{ fontSize: 11 }}>{item.source}{item.issuer ? ` · ${item.issuer}` : ''}</p></div><span className="chip">{item.status}</span></div>)}
+    </div>
+  </section>;
+}
+
 function CommitsView() {
   return <section className="glass-panel alternate-view"><div className="eyebrow">Proof of work</div><h2 className="section-heading" style={{ fontSize: 26 }}>Recent verified commits</h2>{commits.map(([title, detail, time], index) => <div className="commit-row" key={title}><i className={'timeline-dot ' + (index === 0 ? 'active' : '')} style={{ position: 'static', marginTop: 4 }} /><div><h3>{title}</h3><p>{detail}</p></div><time>{time}</time></div>)}</section>;
 }
@@ -218,6 +326,11 @@ export default function CandidateDashboard() {
   const [activeTab, setActiveTab] = useState('Overview');
   const [searchParams] = useSearchParams();
   const [notification, setNotification] = useState('');
+  const [liveScore, setLiveScore] = useState(null);
+
+  useEffect(() => {
+    githubApi.getTalentScore(candidate.id).then(setLiveScore).catch(() => undefined);
+  }, [candidate.id]);
 
   useEffect(() => {
     const gh = searchParams.get('github');
@@ -227,6 +340,15 @@ export default function CandidateDashboard() {
       window.history.replaceState({}, '', '/candidate');
     } else if (gh === 'error') {
       setNotification('GitHub connection failed. Please try again.');
+      window.history.replaceState({}, '', '/candidate');
+    }
+    const linkedIn = searchParams.get('linkedin');
+    if (linkedIn === 'connected') {
+      setNotification('LinkedIn identity connected and verified.');
+      setActiveTab('LinkedIn');
+      window.history.replaceState({}, '', '/candidate');
+    } else if (linkedIn === 'error') {
+      setNotification('LinkedIn connection failed. Please try again.');
       window.history.replaceState({}, '', '/candidate');
     }
   }, [searchParams]);
@@ -256,13 +378,15 @@ export default function CandidateDashboard() {
               <p>{candidate.title} · Your verified proof-of-work cockpit.</p>
               <div className="dossier-skills">{candidate.skills.slice(0, 4).map((skill) => <span className="chip" key={skill}>{skill}</span>)}</div>
             </div>
-            <ScoreRing score={candidate.talentScore} size={138} label="Talent score" />
+            <ScoreRing score={liveScore?.score ?? candidate.talentScore} size={138} label="Talent score" />
           </header>
           <div className="tab-list" role="tablist" aria-label="Candidate dashboard views">
             {tabs.map((tab) => <button className={'tab ' + (activeTab === tab ? 'active' : '')} role="tab" aria-selected={activeTab === tab} key={tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}
           </div>
           {activeTab === 'Overview' && <Overview candidate={candidate} />}
-          {activeTab === 'GitHub' && <GitHubTab candidateId={candidate.id} />}
+          {activeTab === 'GitHub' && <GitHubTab candidateId={candidate.id} onScore={setLiveScore} />}
+          {activeTab === 'LinkedIn' && <LinkedInTab candidateId={candidate.id} />}
+          {activeTab === 'Evidence' && <EvidenceTab candidateId={candidate.id} />}
           {activeTab === 'Commits' && <CommitsView />}
           {activeTab === 'Skills' && <SkillsView candidate={candidate} />}
           {activeTab === 'Network' && <NetworkView />}

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as authController from '../controllers/auth.controller.js';
 import * as githubController from '../controllers/github.controller.js';
+import * as linkedInController from '../controllers/linkedin.controller.js';
 import { validate } from '../middleware/validation.middleware.js';
 
 const router = Router();
@@ -14,5 +15,8 @@ router.put('/me', authController.updateMe);
 
 router.get('/github', githubController.initiateOAuth);
 router.get('/github/callback', githubController.handleCallback);
+router.get('/linkedin', linkedInController.initiateOAuth);
+router.post('/linkedin/preview', linkedInController.createPreviewConnection);
+router.get('/linkedin/callback', linkedInController.handleCallback);
 
 export default router;

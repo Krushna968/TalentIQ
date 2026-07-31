@@ -6,6 +6,9 @@ export const env = {
   GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID || '',
   GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || '',
   GITHUB_CALLBACK_URL: process.env.GITHUB_CALLBACK_URL || 'http://localhost:4000/api/auth/github/callback',
+  LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID || '',
+  LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET || '',
+  LINKEDIN_CALLBACK_URL: process.env.LINKEDIN_CALLBACK_URL || 'http://localhost:4000/api/auth/linkedin/callback',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
 };
