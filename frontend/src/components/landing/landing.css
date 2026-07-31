@@ -52,15 +52,21 @@
 }
 
 /* Hero 3D Stage Section */
-.hero-3d-stage {
+.hero-scroll-section {
   position: relative;
-  min-height: 92vh;
+  min-height: 240vh;
+  overflow: clip;
+}
+
+.hero-scroll-frame {
+  position: sticky;
+  top: 0;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 100px 20px 60px;
-  overflow: hidden;
+  padding: 100px 20px 40px;
 }
 
 .hero-3d-content {
@@ -212,13 +218,50 @@
   width: 100%;
   max-width: 1440px;
   margin: 60px auto 0;
-  min-height: 640px;
+  min-height: 560px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 28px;
   padding: 0 24px;
+  --hero-progress: 0;
 }
+
+.hero-scroll-section .orbit-column-left,
+.hero-scroll-section .orbit-column-right {
+  transform: translateX(calc((var(--hero-progress) * 46px) * var(--column-direction, 1))) translateZ(calc(var(--hero-progress) * 30px));
+  opacity: calc(1 - (var(--hero-progress) * 0.28));
+  transition: opacity 120ms linear;
+}
+
+.hero-scroll-section .orbit-column-right {
+  --column-direction: -1;
+}
+
+.hero-scroll-section .orbit-feature-card {
+  padding: 16px;
+  transform: translateY(calc(var(--hero-progress) * var(--card-lift, 0px))) scale(calc(1 - (var(--hero-progress) * 0.06)));
+}
+
+/* The hero uses compact signal nodes; fuller explanations live in the sections below. */
+.hero-scroll-section .orbit-feature-card .card-desc,
+.hero-scroll-section .orbit-feature-card .card-footer {
+  display: none;
+}
+
+.hero-scroll-section .orbit-feature-card .feature-icon-badge {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 10px;
+}
+
+.hero-scroll-section .orbit-feature-card .card-subtitle {
+  margin-bottom: 0;
+}
+
+.hero-scroll-section .orbit-feature-card:nth-child(1) { --card-lift: -28px; }
+.hero-scroll-section .orbit-feature-card:nth-child(2) { --card-lift: 10px; }
+.hero-scroll-section .orbit-feature-card:nth-child(3) { --card-lift: 34px; }
 
 .orbit-column-left,
 .orbit-column-right {

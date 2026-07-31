@@ -1,8 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-export default function AICore3D({ onHoverCore }) {
+export default function AICore3D({ onHoverCore, scrollProgress = 0 }) {
   const containerRef = useRef(null);
+  const scrollProgressRef = useRef(scrollProgress);
+
+  useEffect(() => {
+    scrollProgressRef.current = scrollProgress;
+  }, [scrollProgress]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -171,6 +176,13 @@ export default function AICore3D({ onHoverCore }) {
     }
     coreGroup.add(cubesGroup);
 
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const basePositions = {
+      innerCore: innerCore.position.clone(),
+      innerSolidCore: innerSolidCore.position.clone(),
+      particleCloud: particleCloud.position.clone(),
+    };
+
     // Mouse Interaction
     let targetRotationX = 0;
     let targetRotationY = 0;
@@ -191,17 +203,26 @@ export default function AICore3D({ onHoverCore }) {
 
     const animate = () => {
       const elapsedTime = clock.getElapsedTime();
+      const rawProgress = prefersReducedMotion ? 0 : scrollProgressRef.current;
+      const explode = rawProgress * rawProgress * (3 - 2 * rawProgress);
 
       // Continuous rotation
-      innerCore.rotation.y = elapsedTime * 0.4;
-      innerCore.rotation.x = elapsedTime * 0.2;
-      innerSolidCore.rotation.y = -elapsedTime * 0.6;
+      innerCore.rotation.y = elapsedTime * 0.4 + explode * 0.45;
+      innerCore.rotation.x = elapsedTime * 0.2 + explode * 0.2;
+      innerCore.position.z = basePositions.innerCore.z + explode * 1.25;
+      innerSolidCore.rotation.y = -elapsedTime * 0.6 - explode * 0.6;
+      innerSolidCore.position.z = basePositions.innerSolidCore.z - explode * 1.05;
+      innerSolidCore.position.y = basePositions.innerSolidCore.y - explode * 0.45;
 
       ring1.rotation.z = elapsedTime * 0.3;
       ring2.rotation.x = elapsedTime * 0.25;
       ring3.rotation.y = elapsedTime * 0.2;
+      ringGroup.scale.setScalar(1 + explode * 0.25);
 
       particleCloud.rotation.y = elapsedTime * 0.08;
+      particleCloud.position.z = basePositions.particleCloud.z - explode * 0.75;
+      particleCloud.scale.setScalar(1 + explode * 0.35);
+      cubesGroup.scale.setScalar(1 + explode * 0.45);
 
       // Rotate orbiting cubes
       cubeInstances.forEach((c) => {
@@ -213,7 +234,7 @@ export default function AICore3D({ onHoverCore }) {
       });
 
       // Pulsating central light glow
-      centerGlow.intensity = 3 + Math.sin(elapsedTime * 3) * 1.5;
+      centerGlow.intensity = (3 + Math.sin(elapsedTime * 3) * 1.5) * (1 - explode * 0.25);
 
       // Mouse Parallax Smooth Lerp
       coreGroup.rotation.y += (targetRotationY - coreGroup.rotation.y) * 0.05;

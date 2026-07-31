@@ -4,7 +4,7 @@ import { FileText, GitPullRequest, Award, Bot, Network, ShieldAlert, Cpu, Sparkl
 const pipelineSteps = [
   { id: 'resume', title: 'Resume Ingestion', desc: 'Parses work history, experience timelines, and roles', icon: FileText, step: '01', color: '#00d8ff' },
   { id: 'github', title: 'GitHub Ingestion', desc: 'Analyzes commits, PR depth, code metrics & repo weight', icon: GitPullRequest, step: '02', color: '#00d8ff' },
-  { id: 'certifications', title: 'Certificates', desc: 'Cryptographically verifies credentials & course origins', icon: Award, step: '03', color: '#8b5cff' },
+  { id: 'certifications', title: 'Credentials', desc: 'Validates credential sources & course origins', icon: Award, step: '03', color: '#8b5cff' },
   { id: 'ai-agents', title: 'Multi-Agent AI', desc: '6 specialized evaluators grade reasoning & code quality', icon: Bot, step: '04', color: '#8b5cff' },
   { id: 'knowledge-graph', title: 'Knowledge Graph', desc: 'Maps cross-discipline skill nodes into unified vector space', icon: Network, step: '05', color: '#00d8ff' },
   { id: 'verification', title: 'Verification Engine', desc: 'Calculates signal integrity & anti-fraud confidence scores', icon: ShieldAlert, step: '06', color: '#8b5cff' },

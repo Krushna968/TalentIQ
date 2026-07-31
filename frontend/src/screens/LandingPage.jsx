@@ -10,17 +10,9 @@ import {
   Network,
   RefreshCw,
   UserCheck,
-  TrendingUp,
   CheckCircle2,
   Lock,
 } from 'lucide-react';
-
-const GithubIcon = ({ size = 16, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-    <path d="M9 18c-4.51 2-5-2-7-2" />
-  </svg>
-);
 
 import FuturisticBackground from '../components/landing/FuturisticBackground.jsx';
 import AICore3D from '../components/landing/AICore3D.jsx';
@@ -66,7 +58,7 @@ const whyTalentIQCards = [
   {
     icon: UserCheck,
     title: 'Smart Hiring',
-    desc: 'Empowers engineering leaders to discover top 1% verified talent with defensible hiring confidence.',
+    desc: 'Helps engineering leaders discover high-signal verified talent with defensible hiring confidence.',
     chip: 'High Signal',
   },
 ];
@@ -74,6 +66,7 @@ const whyTalentIQCards = [
 export default function LandingPage() {
   const navigate = useNavigate();
   const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const [heroScrollProgress, setHeroScrollProgress] = useState(0);
 
 
   // Smooth scroll handler
@@ -83,6 +76,31 @@ export default function LandingPage() {
       el.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  useEffect(() => {
+    const hero = document.querySelector('.hero-scroll-section');
+    if (!hero) return undefined;
+
+    let frameId = 0;
+    const updateProgress = () => {
+      frameId = 0;
+      const bounds = hero.getBoundingClientRect();
+      const distance = Math.max(hero.offsetHeight - window.innerHeight, 1);
+      setHeroScrollProgress(Math.min(Math.max(-bounds.top / distance, 0), 1));
+    };
+    const handleScroll = () => {
+      if (!frameId) frameId = window.requestAnimationFrame(updateProgress);
+    };
+
+    updateProgress();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+      if (frameId) window.cancelAnimationFrame(frameId);
+    };
+  }, []);
 
   return (
     <div className="space-page dark-landing-theme">
@@ -133,11 +151,12 @@ export default function LandingPage() {
 
       <main>
         {/* HERO SECTION WITH 3D AI CORE */}
-        <section className="hero-3d-stage">
+        <section className="hero-scroll-section">
+          <div className="hero-scroll-frame">
           <div className="hero-3d-content">
             <div className="hero-badge-pill">
               <Sparkles size={14} className="sparkle-icon" />
-              <span>Verified AI Talent Intelligence Platform</span>
+              <span>Evidence-based talent intelligence</span>
             </div>
 
             <h1 className="hero-3d-title">
@@ -147,7 +166,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="hero-3d-subtitle">
-              Building Trusted Digital Talent Identities using Multi-Agent AI, Knowledge Graphs and Explainable Intelligence.
+              Build trusted digital talent identities with multi-agent AI, knowledge graphs, and explainable intelligence.
             </p>
 
             <div className="hero-cta-group">
@@ -167,26 +186,25 @@ export default function LandingPage() {
                 <Play size={15} fill="currentColor" /> Watch Demo
               </button>
 
-              <a
+              <button
                 className="button-neon-ghost"
-                href="https://github.com"
-                target="_blank"
-                rel="noreferrer"
+                type="button"
+                onClick={() => scrollToSection('pipeline')}
               >
-                <GithubIcon size={16} /> GitHub Repository
-              </a>
+                <GitBranch size={16} /> See evidence workflow
+              </button>
             </div>
           </div>
 
           {/* 3D AI Core Showcase — Left Cards | Model | Right Cards */}
-          <div className="core-orbit-stage" id="features">
+          <div className="core-orbit-stage" id="features" style={{ '--hero-progress': heroScrollProgress }}>
             {/* Left column — first 3 features */}
             <div className="orbit-column-left">
               {[
                 {
                   icon: ShieldCheck,
                   title: 'Skill Verification',
-                  subtitle: 'Cryptographic Code Proof',
+                  subtitle: 'Verifiable Code Evidence',
                   desc: 'Automated static & dynamic code verification directly from commit trees and pull request evidence.',
                   tag: 'Proof Engine',
                 },
@@ -232,7 +250,7 @@ export default function LandingPage() {
 
             {/* Center — 3D AI Core */}
             <div className="core-center-wrapper">
-              <AICore3D />
+              <AICore3D scrollProgress={heroScrollProgress} />
             </div>
 
             {/* Right column — last 3 features */}
@@ -257,7 +275,7 @@ export default function LandingPage() {
                   title: 'Continuous Intelligence',
                   subtitle: 'Real-Time Sync',
                   desc: 'Automatically updates talent metrics as candidates ship code, complete projects, and earn credentials.',
-                  tag: 'Real-time Vector',
+                  tag: 'Real-Time Vector',
                 },
               ].map((feat, idx) => {
                 const Icon = feat.icon;
@@ -285,33 +303,34 @@ export default function LandingPage() {
               })}
             </div>
           </div>
+          </div>
         </section>
 
         {/* LIVE STATS COUNTER ROW */}
         <section className="stats-counter-row content-wrap" aria-label="TalentIQ Platform Statistics">
           <div className="stat-counter-card glass-panel">
-            <div className="stat-val">12,450+</div>
-            <span className="stat-lbl">Verified Profiles</span>
+            <div className="stat-val">6</div>
+            <span className="stat-lbl">AI evaluators</span>
           </div>
 
           <div className="stat-counter-card glass-panel">
-            <div className="stat-val">1.84M+</div>
-            <span className="stat-lbl">Repositories Analysed</span>
+            <div className="stat-val">9</div>
+            <span className="stat-lbl">Evidence stages</span>
           </div>
 
           <div className="stat-counter-card glass-panel">
-            <div className="stat-val">450K+</div>
-            <span className="stat-lbl">Skills Verified</span>
+            <div className="stat-val">1</div>
+            <span className="stat-lbl">Unified talent identity</span>
           </div>
 
           <div className="stat-counter-card glass-panel">
-            <div className="stat-val">99.4%</div>
-            <span className="stat-lbl">AI Matching Accuracy</span>
+            <div className="stat-val">Live</div>
+            <span className="stat-lbl">Identity updates</span>
           </div>
 
           <div className="stat-counter-card glass-panel">
-            <div className="stat-val">850+</div>
-            <span className="stat-lbl">Recruiters Supported</span>
+            <div className="stat-val">0</div>
+            <span className="stat-lbl">Black-box decisions</span>
           </div>
         </section>
 
@@ -356,7 +375,7 @@ export default function LandingPage() {
         <section className="final-cta-section">
           <div className="final-cta-card glass-panel">
             <div className="eyebrow" style={{ marginBottom: '16px' }}>
-              <Lock size={12} /> Institutional Grade Verification
+              <Lock size={12} /> Institutional-grade verification
             </div>
             <h2>Ready to Experience the Future of AI Hiring?</h2>
             <p>Step into the next-generation AI talent intelligence platform. Create your digital talent identity or explore verified candidates.</p>

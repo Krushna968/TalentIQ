@@ -1,13 +1,39 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowRight, BriefcaseBusiness, LockKeyhole, Mail, ShieldCheck, UserRound } from 'lucide-react';
 import SpaceFabric from '../components/SpaceFabric.jsx';
+
+const roleContent = {
+  candidate: {
+    label: 'For candidates and students',
+    title: 'Turn your work into a trusted talent identity.',
+    description: 'Connect projects, credentials, interviews, and real proof of work so your skills can speak for themselves.',
+    button: 'Enter candidate workspace',
+    icon: UserRound,
+    email: 'aditi@dev.io',
+  },
+  recruiter: {
+    label: 'For recruiters and hiring teams',
+    title: 'Hire with evidence, not guesswork.',
+    description: 'Discover high-signal candidates through explainable skill matches and attributable proof of work.',
+    button: 'Open recruiter workspace',
+    icon: BriefcaseBusiness,
+    email: 'recruiter@acme.com',
+  },
+};
 
 export default function AuthScreen() {
   const location = useLocation();
   const navigate = useNavigate();
   const [role, setRole] = useState(location.state?.role === 'recruiter' ? 'recruiter' : 'candidate');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const email = role === 'recruiter' ? 'recruiter@acme.com' : 'aditi@dev.io';
+  const content = roleContent[role];
+  const RoleIcon = content.icon;
+
+  function selectRole(nextRole) {
+    setRole(nextRole);
+    setIsSubmitting(false);
+  }
 
   function submit(event) {
     event.preventDefault();
@@ -17,69 +43,72 @@ export default function AuthScreen() {
   }
 
   return (
-    <div className="auth-layout">
+    <div className={`auth-layout auth-layout--${role}`}>
+      <SpaceFabric variant="auth" className="auth-fabric" />
       <section className="auth-story">
-        <SpaceFabric />
-        <Link className="brand" to="/">
+        <Link className="brand auth-story-brand" to="/">
           <span className="brand-mark" aria-hidden="true" />
           <span>TalentIQ</span>
         </Link>
         <div className="auth-story-content">
-          <div className="eyebrow">Verified talent network</div>
-          <h1 className="gradient-text">Verified once.<br />Recognized everywhere.</h1>
-          <p>Connect your proof of work to an intelligence layer recruiters can trust—without asking anyone to take your word for it.</p>
+          <div className="eyebrow">{content.label}</div>
+          <h1 className="gradient-text">{content.title}</h1>
+          <p>{content.description}</p>
+          <div className="auth-story-proof">
+            <ShieldCheck size={16} />
+            <span>Evidence-backed. Explainable. Built for real careers.</span>
+          </div>
         </div>
         <div className="auth-system">
-          <span className="material-symbols-outlined" style={{ fontSize: 15 }}>lock</span>
-          Secure connection established
+          <LockKeyhole size={14} /> Secure connection established
         </div>
       </section>
 
       <main className="auth-form-side">
-        <Link className="brand auth-mobile-brand" to="/">
-          <span className="brand-mark" aria-hidden="true" />
-          <span>TalentIQ</span>
-        </Link>
+        <div className="auth-card">
+          <form className="auth-form-content" onSubmit={submit}>
+            <div className="auth-form-heading">
+              <div className="auth-role-icon"><RoleIcon size={18} /></div>
+              <div className="eyebrow">Identity gateway</div>
+              <h2>Welcome back</h2>
+              <p>Sign in to continue to your TalentIQ workspace.</p>
+            </div>
 
-        <form className="glass-panel auth-card" onSubmit={submit}>
-          <div style={{ textAlign: 'center', marginBottom: 28 }}>
-            <div className="eyebrow" style={{ justifyContent: 'center' }}>Identity gateway</div>
-            <h2 className="font-space" style={{ margin: '12px 0 7px', fontSize: 28, letterSpacing: '-.04em' }}>Welcome to TalentIQ</h2>
-            <p className="muted" style={{ margin: 0, fontSize: 13, lineHeight: 1.55 }}>Choose your workspace to continue.</p>
-          </div>
-
-          <div className="role-toggle" role="tablist" aria-label="Workspace type">
-            {['candidate', 'recruiter'].map((nextRole) => (
-              <button key={nextRole} className={role === nextRole ? 'active' : ''} type="button" role="tab" aria-selected={role === nextRole} onClick={() => setRole(nextRole)}>
-                {nextRole === 'candidate' ? 'Candidate' : 'Recruiter'}
+            <div className="role-toggle" role="tablist" aria-label="Workspace type">
+              <button className={role === 'candidate' ? 'active' : ''} type="button" role="tab" aria-selected={role === 'candidate'} onClick={() => selectRole('candidate')}>
+                Candidate / Student
               </button>
-            ))}
-          </div>
+              <button className={role === 'recruiter' ? 'active' : ''} type="button" role="tab" aria-selected={role === 'recruiter'} onClick={() => selectRole('recruiter')}>
+                Recruiter
+              </button>
+            </div>
 
-          <div style={{ display: 'grid', gap: 17, marginTop: 25 }}>
-            <label>
-              <span className="form-label">Email address</span>
-              <span className="input-wrap">
-                <span className="material-symbols-outlined">mail</span>
-                <input className="form-input" type="email" defaultValue={email} key={email} aria-label="Email address" />
-              </span>
-            </label>
-            <label>
-              <span className="form-label">Password</span>
-              <span className="input-wrap">
-                <span className="material-symbols-outlined">lock</span>
-                <input className="form-input" type="password" defaultValue="password123" aria-label="Password" />
-              </span>
-            </label>
-            <button className="button button-primary" type="submit" disabled={isSubmitting} style={{ marginTop: 5 }}>
-              {isSubmitting ? <><span className="loading-spinner" /> Authenticating</> : <>Continue as {role === 'recruiter' ? 'Recruiter' : 'Candidate'}<span className="material-symbols-outlined" style={{ fontSize: 17 }}>arrow_forward</span></>}
+            <div className="auth-fields">
+              <label>
+                <span className="form-label">Email address</span>
+                <span className="input-wrap">
+                  <Mail size={17} aria-hidden="true" />
+                  <input className="form-input" type="email" defaultValue={content.email} key={content.email} autoComplete="email" aria-label="Email address" />
+                </span>
+              </label>
+              <label>
+                <span className="form-label">Password</span>
+                <span className="input-wrap">
+                  <LockKeyhole size={17} aria-hidden="true" />
+                  <input className="form-input" type="password" defaultValue="password123" autoComplete="current-password" aria-label="Password" />
+                </span>
+              </label>
+            </div>
+
+            <button className="auth-submit" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <><span className="loading-spinner" /> Signing in</> : <>{content.button}<ArrowRight size={17} /></>}
             </button>
-          </div>
 
-          <p className="muted" style={{ margin: '21px 0 0', paddingTop: 18, borderTop: '1px solid rgba(255,255,255,.09)', textAlign: 'center', fontSize: 12 }}>
-            New to TalentIQ? <Link to="/" style={{ color: '#86f5ff', fontWeight: 700 }}>Explore the network</Link>
-          </p>
-        </form>
+            <p className="auth-form-footer">
+              New to TalentIQ? <Link to="/">Explore the platform</Link>
+            </p>
+          </form>
+        </div>
       </main>
     </div>
   );

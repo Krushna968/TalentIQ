@@ -70,7 +70,7 @@ export default function PlatformPreview3D() {
                       <div>
                         <h4>Alex Rivera</h4>
                         <p>Senior AI Systems Engineer</p>
-                        <div className="proof-tag"><ShieldCheck size={11} /> Cryptographically Verified</div>
+                        <div className="proof-tag"><ShieldCheck size={11} /> Evidence Verified</div>
                       </div>
                     </div>
 
@@ -127,7 +127,7 @@ export default function PlatformPreview3D() {
                         <Award size={16} className="feed-icon purple" />
                         <div className="feed-text">
                           <h6>ETH Global Hackathon 1st Place</h6>
-                          <p>Smart contract verification cryptographically confirmed via ENS & GitHub repo release.</p>
+                          <p>Submission evidence linked through ENS and the published GitHub release.</p>
                         </div>
                         <span className="time-tag">2m ago</span>
                       </div>

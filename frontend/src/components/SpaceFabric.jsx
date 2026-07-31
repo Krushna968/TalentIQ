@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-export default function SpaceFabric({ className = '' }) {
+export default function SpaceFabric({ className = '', variant = 'default' }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -97,14 +97,18 @@ export default function SpaceFabric({ className = '' }) {
 
       points.forEach((point, index) => {
         const twinkle = 0.55 + Math.sin(time / 900 + point.phase) * 0.3;
-        const gold = index % 13 === 0;
+        const authPalette = variant === 'auth';
+        const gold = !authPalette && index % 13 === 0;
+        const authColor = index % 3 === 0 ? '#3FE6FF' : index % 3 === 1 ? '#4FD1C5' : '#7DD3FC';
         context.beginPath();
         context.arc(point.x, point.y, point.radius, 0, Math.PI * 2);
-        context.fillStyle = gold
-          ? 'rgba(255, 213, 79, ' + twinkle + ')'
-          : 'rgba(120, 245, 255, ' + twinkle + ')';
+        context.fillStyle = authPalette
+          ? 'rgba(' + (index % 3 === 0 ? '63, 230, 255' : index % 3 === 1 ? '79, 209, 197' : '125, 211, 252') + ', ' + twinkle + ')'
+          : gold
+            ? 'rgba(255, 213, 79, ' + twinkle + ')'
+            : 'rgba(120, 245, 255, ' + twinkle + ')';
         context.shadowBlur = gold ? 10 : 7;
-        context.shadowColor = gold ? '#ffb800' : '#00e5ff';
+        context.shadowColor = authPalette ? authColor : gold ? '#ffb800' : '#00e5ff';
         context.fill();
         context.shadowBlur = 0;
       });
