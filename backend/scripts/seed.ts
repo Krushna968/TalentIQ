@@ -120,7 +120,9 @@ const seed = async () => {
     await prisma.candidate.upsert({
       where: { id: candidate.id },
       create: candidate,
-      update: candidate,
+      // Initial profile records are safe to run repeatedly. Never replace a
+      // candidate's live identity, verified evidence, or calculated scores.
+      update: {},
     });
   }
 
