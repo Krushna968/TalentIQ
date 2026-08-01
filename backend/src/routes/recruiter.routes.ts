@@ -7,7 +7,7 @@ const router = Router();
 
 router.use(authenticate, requireOrg);
 
-// Pipeline endpoints moved to /api/jobs/:jobId/pipeline and /api/pipeline.
+// Pipeline endpoints moved to /api/requisitions/:jobId/pipeline and /api/pipeline.
 router.get('/search', recruiterController.searchCandidates);
 router.post('/compare', recruiterController.compareCandidates);
 

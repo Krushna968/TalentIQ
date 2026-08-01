@@ -38,7 +38,7 @@ export async function effectiveJobRole(
   const user = getUser(req);
   if (!jobId) throw new AppError(400, 'Missing job id');
 
-  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  const job = await prisma.requisition.findUnique({ where: { id: jobId } });
   assertSameOrg(job, req); // 403 if missing or in another org (no existence leak)
 
   const membership = await prisma.membership.findUnique({
@@ -70,7 +70,7 @@ export async function assertJobPermission(
   return job;
 }
 
-// Route guard for job-scoped endpoints (`/api/jobs/:jobId/...`).
+// Route guard for job-scoped endpoints (`/api/requisitions/:jobId/...`).
 export const requireJobPermission = (level: JobPermission): RequestHandler =>
   wrap(async (req, _res, next) => {
     await assertJobPermission(req, req.params.jobId as string, level);

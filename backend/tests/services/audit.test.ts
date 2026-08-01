@@ -18,7 +18,7 @@ describe('audit trail', () => {
     const board = await pipeline.getBoard(req, job.id);
     await pipeline.recordDecision(req, board.entries[0].id, 'hold', 'Revisit next week'); // pipeline.decision
 
-    const logs = await prisma.auditLog.findMany({ where: { orgId: 'orgA' }, orderBy: { createdAt: 'asc' } });
+    const logs = await prisma.recruiterAuditLog.findMany({ where: { orgId: 'orgA' }, orderBy: { createdAt: 'asc' } });
     expect(logs.map((l) => l.action)).toEqual(
       expect.arrayContaining(['job.create', 'pipeline.add', 'pipeline.decision']),
     );
@@ -36,8 +36,8 @@ describe('audit trail', () => {
     await pipeline.addCandidates(req, job.id, ['cand1']);
     const board = await pipeline.getBoard(req, job.id);
 
-    const before = await prisma.auditLog.count();
+    const before = await prisma.recruiterAuditLog.count();
     await expect(pipeline.recordDecision(req, board.entries[0].id, 'hire', '')).rejects.toMatchObject({ statusCode: 400 });
-    expect(await prisma.auditLog.count()).toBe(before); // nothing logged for the failed call
+    expect(await prisma.recruiterAuditLog.count()).toBe(before); // nothing logged for the failed call
   });
 });

@@ -23,10 +23,11 @@ routes.use('/auth', authRoutes);
 routes.use('/candidates', candidateRoutes);
 routes.use('/candidates', githubRoutes);
 routes.use('/candidates/:candidateId/evidence', evidenceRoutes);
+routes.use('/evidence', evidenceRoutes);
 routes.use('/recruiters', recruiterRoutes);
 // Owner 3 — recruiter operations
 routes.use('/orgs', organizationRoutes);
-routes.use('/jobs', jobRoutes);
+routes.use('/requisitions', jobRoutes);
 routes.use('/pipeline', pipelineRoutes);
 routes.use('/verification', verificationRoutes);
 routes.use('/matching', matchingRoutes);
@@ -39,3 +40,4 @@ routes.use('/hackathons', hackathonRoutes);
 routes.use('/trust', trustRoutes);
 
 export { routes };
+

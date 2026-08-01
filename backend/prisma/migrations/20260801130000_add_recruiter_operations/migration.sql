@@ -24,7 +24,7 @@ CREATE TABLE "Membership" (
 );
 
 -- CreateTable
-CREATE TABLE "Job" (
+CREATE TABLE "Requisition" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE "Job" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Job_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Requisition_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -98,7 +98,7 @@ CREATE TABLE "PipelineEvent" (
 );
 
 -- CreateTable
-CREATE TABLE "AuditLog" (
+CREATE TABLE "RecruiterAuditLog" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "actorId" TEXT NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE "AuditLog" (
     "metadata" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "RecruiterAuditLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -122,7 +122,7 @@ CREATE INDEX "Membership_orgId_role_idx" ON "Membership"("orgId", "role");
 CREATE UNIQUE INDEX "Membership_orgId_userId_key" ON "Membership"("orgId", "userId");
 
 -- CreateIndex
-CREATE INDEX "Job_orgId_status_idx" ON "Job"("orgId", "status");
+CREATE INDEX "Requisition_orgId_status_idx" ON "Requisition"("orgId", "status");
 
 -- CreateIndex
 CREATE INDEX "JobCollaborator_userId_idx" ON "JobCollaborator"("userId");
@@ -143,25 +143,25 @@ CREATE UNIQUE INDEX "PipelineEntry_jobId_candidateId_key" ON "PipelineEntry"("jo
 CREATE INDEX "PipelineEvent_entryId_createdAt_idx" ON "PipelineEvent"("entryId", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "AuditLog_orgId_createdAt_idx" ON "AuditLog"("orgId", "createdAt");
+CREATE INDEX "RecruiterAuditLog_orgId_createdAt_idx" ON "RecruiterAuditLog"("orgId", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "AuditLog_targetType_targetId_idx" ON "AuditLog"("targetType", "targetId");
+CREATE INDEX "RecruiterAuditLog_targetType_targetId_idx" ON "RecruiterAuditLog"("targetType", "targetId");
 
 -- AddForeignKey
 ALTER TABLE "Membership" ADD CONSTRAINT "Membership_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Job" ADD CONSTRAINT "Job_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Requisition" ADD CONSTRAINT "Requisition_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "JobCollaborator" ADD CONSTRAINT "JobCollaborator_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "Job"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "JobCollaborator" ADD CONSTRAINT "JobCollaborator_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "Requisition"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PipelineStage" ADD CONSTRAINT "PipelineStage_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "Job"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PipelineStage" ADD CONSTRAINT "PipelineStage_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "Requisition"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PipelineEntry" ADD CONSTRAINT "PipelineEntry_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "Job"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PipelineEntry" ADD CONSTRAINT "PipelineEntry_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "Requisition"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PipelineEntry" ADD CONSTRAINT "PipelineEntry_candidateId_fkey" FOREIGN KEY ("candidateId") REFERENCES "Candidate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -173,5 +173,5 @@ ALTER TABLE "PipelineEntry" ADD CONSTRAINT "PipelineEntry_currentStageId_fkey" F
 ALTER TABLE "PipelineEvent" ADD CONSTRAINT "PipelineEvent_entryId_fkey" FOREIGN KEY ("entryId") REFERENCES "PipelineEntry"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "RecruiterAuditLog" ADD CONSTRAINT "RecruiterAuditLog_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

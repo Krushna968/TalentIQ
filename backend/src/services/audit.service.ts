@@ -2,7 +2,7 @@ import { prisma } from '../lib/prisma.js';
 
 // Accepts either the shared client or a $transaction client, so an audit row can
 // be written in the same transaction as the action it records (all-or-nothing).
-type AuditClient = Pick<typeof prisma, 'auditLog'>;
+type AuditClient = Pick<typeof prisma, 'recruiterAuditLog'>;
 
 export interface AuditInput {
   orgId: string;
@@ -15,7 +15,7 @@ export interface AuditInput {
 }
 
 export async function recordAudit(client: AuditClient, input: AuditInput) {
-  return client.auditLog.create({
+  return client.recruiterAuditLog.create({
     data: {
       orgId: input.orgId,
       actorId: input.actorId,

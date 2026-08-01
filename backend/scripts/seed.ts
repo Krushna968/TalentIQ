@@ -146,7 +146,7 @@ const seed = async () => {
     create: { orgId: ORG_ID, userId: USER_ID, email: "demo@talentiq.ai", name: "Demo Recruiter", role: "owner" },
     update: {},
   });
-  await prisma.job.upsert({
+  await prisma.requisition.upsert({
     where: { id: JOB_ID },
     create: {
       id: JOB_ID, orgId: ORG_ID, title: "Senior Backend Engineer",

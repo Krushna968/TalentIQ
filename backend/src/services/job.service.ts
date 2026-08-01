@@ -28,7 +28,7 @@ export async function listJobs(req: AuthenticatedRequest, filter: { status?: str
       ? base
       : { ...base, OR: [{ visibility: 'org' }, { collaborators: { some: { userId: user.id } } }] };
 
-  return prisma.job.findMany({
+  return prisma.requisition.findMany({
     where,
     orderBy: { createdAt: 'desc' },
     include: { _count: { select: { entries: true, collaborators: true } } },
@@ -37,7 +37,7 @@ export async function listJobs(req: AuthenticatedRequest, filter: { status?: str
 
 export async function getJob(req: AuthenticatedRequest, jobId: string) {
   await assertJobPermission(req, jobId, 'viewer');
-  return prisma.job.findUnique({
+  return prisma.requisition.findUnique({
     where: { id: jobId },
     include: { stages: { orderBy: { order: 'asc' } }, collaborators: true },
   });
@@ -53,7 +53,7 @@ export async function createJob(
 
   const actor = actorOf(req);
   return prisma.$transaction(async (tx) => {
-    const job = await tx.job.create({
+    const job = await tx.requisition.create({
       data: {
         orgId: user.orgId,
         title: data.title.trim(),
@@ -87,7 +87,7 @@ export async function updateJob(
   const user = getUser(req);
 
   return prisma.$transaction(async (tx) => {
-    const job = await tx.job.update({
+    const job = await tx.requisition.update({
       where: { id: jobId },
       data: {
         title: data.title?.trim(),
@@ -113,7 +113,7 @@ export async function setJobStatus(req: AuthenticatedRequest, jobId: string, sta
   const user = getUser(req);
 
   return prisma.$transaction(async (tx) => {
-    const job = await tx.job.update({
+    const job = await tx.requisition.update({
       where: { id: jobId },
       data: { status, closedAt: status === 'closed' ? new Date() : null },
     });

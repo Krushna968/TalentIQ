@@ -27,6 +27,7 @@ export const api = {
   get: (path) => request(path),
   post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
   patch: (path, body) => request(path, { method: 'PATCH', body: JSON.stringify(body) }),
+  delete: (path) => request(path, { method: 'DELETE' }),
 };
 
 // Owner 3 — recruiter operations. Until Owner 1's auth client lands, identity /
@@ -38,19 +39,20 @@ export const orgApi = {
   addMember: (orgId, body) => api.post(`/orgs/${orgId}/members`, body),
 };
 
+// Recruiter requisitions (backend model: Requisition, mounted at /api/requisitions).
 export const jobApi = {
-  list: (params) => api.get(`/jobs${qs(params)}`),
-  get: (jobId) => api.get(`/jobs/${jobId}`),
-  create: (body) => api.post('/jobs', body),
-  update: (jobId, body) => api.patch(`/jobs/${jobId}`, body),
-  setStatus: (jobId, status) => api.patch(`/jobs/${jobId}/status`, { status }),
-  collaborators: (jobId) => api.get(`/jobs/${jobId}/collaborators`),
-  addCollaborator: (jobId, body) => api.post(`/jobs/${jobId}/collaborators`, body),
+  list: (params) => api.get(`/requisitions${qs(params)}`),
+  get: (jobId) => api.get(`/requisitions/${jobId}`),
+  create: (body) => api.post('/requisitions', body),
+  update: (jobId, body) => api.patch(`/requisitions/${jobId}`, body),
+  setStatus: (jobId, status) => api.patch(`/requisitions/${jobId}/status`, { status }),
+  collaborators: (jobId) => api.get(`/requisitions/${jobId}/collaborators`),
+  addCollaborator: (jobId, body) => api.post(`/requisitions/${jobId}/collaborators`, body),
 };
 
 export const pipelineApi = {
-  board: (jobId) => api.get(`/jobs/${jobId}/pipeline`),
-  addCandidates: (jobId, candidateIds) => api.post(`/jobs/${jobId}/pipeline`, { candidateIds }),
+  board: (jobId) => api.get(`/requisitions/${jobId}/pipeline`),
+  addCandidates: (jobId, candidateIds) => api.post(`/requisitions/${jobId}/pipeline`, { candidateIds }),
   moveStage: (entryId, toStageId, expectedUpdatedAt) =>
     api.patch(`/pipeline/entries/${entryId}/stage`, { toStageId, expectedUpdatedAt }),
   decide: (entryId, decision, reason) =>
@@ -70,6 +72,7 @@ export const githubApi = {
   checkConnection: (candidateId) => api.get(`/candidates/${candidateId}/github/check`),
   getProfile: (candidateId) => api.get(`/candidates/${candidateId}/github/profile`),
   triggerSync: (candidateId) => api.post(`/candidates/${candidateId}/github/sync`),
+  disconnect: (candidateId) => api.delete(`/candidates/${candidateId}/github`),
   getTalentScore: (candidateId) => api.get(`/candidates/${candidateId}/talent-score`),
 };
 

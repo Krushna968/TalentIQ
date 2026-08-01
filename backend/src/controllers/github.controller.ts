@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import * as githubService from '../services/github.service.js';
 import { createGitHubOAuthState, verifyGitHubOAuthState } from '../services/github-oauth-state.service.js';
+import { decryptSecret } from '../services/secret-crypto.service.js';
 
 export const initiateOAuth = async (req: Request, res: Response) => {
   const candidateId = req.query.candidateId as string | undefined;
@@ -18,9 +19,13 @@ export const initiateOAuth = async (req: Request, res: Response) => {
   }
 
   // When production login replaces the demo session, candidateId must come from req.user, not the query string.
-  const state = createGitHubOAuthState(candidate.id);
-  const url = githubService.getOAuthUrl(state);
-  res.json({ url });
+  try {
+    const state = createGitHubOAuthState(candidate.id);
+    const url = githubService.getOAuthUrl(state);
+    res.json({ url });
+  } catch (error) {
+    res.status(503).json({ error: error instanceof Error ? error.message : 'GitHub OAuth is unavailable.' });
+  }
 };
 
 export const handleCallback = async (req: Request, res: Response) => {
@@ -80,10 +85,14 @@ export const triggerSync = async (req: Request, res: Response) => {
       return;
     }
 
-    await githubService.syncCandidateFromGitHub(candidateId, connection.accessToken);
+    await githubService.syncCandidateFromGitHub(candidateId, decryptSecret(connection.accessToken));
     res.json({ message: 'Sync completed' });
   } catch (err) {
     console.error('Error syncing GitHub', err);
+    await prisma.githubConnection.updateMany({
+      where: { candidateId: req.params.candidateId as string },
+      data: { syncStatus: 'failed' },
+    });
     res.status(500).json({ error: 'Sync failed' });
   }
 };
@@ -109,5 +118,22 @@ export const checkConnection = async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Error checking GitHub connection', err);
     res.status(500).json({ error: 'Failed to check connection' });
+  }
+};
+
+export const disconnect = async (req: Request, res: Response) => {
+  try {
+    const candidateId = req.params.candidateId as string;
+    await prisma.$transaction([
+      prisma.githubConnection.deleteMany({ where: { candidateId } }),
+      prisma.candidate.update({
+        where: { id: candidateId },
+        data: { githubConnected: false, githubScore: null },
+      }),
+    ]);
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error disconnecting GitHub', error);
+    res.status(500).json({ error: 'Failed to disconnect GitHub' });
   }
 };

@@ -1,7 +1,7 @@
 import { asyncHandler } from '../lib/http.js';
 import * as pipeline from '../services/pipeline.service.js';
 
-// Job-scoped: board + adding candidates (mounted under /api/jobs/:jobId/pipeline).
+// Job-scoped: board + adding candidates (mounted under /api/requisitions/:jobId/pipeline).
 export const getBoard = asyncHandler(async (req, res) => {
   res.json(await pipeline.getBoard(req, req.params.jobId as string));
 });

@@ -1,62 +1,31 @@
+import { randomUUID } from 'node:crypto';
 import { prisma } from '../lib/prisma.js';
 import { calculateAndStoreTalentScore } from './talent-score.service.js';
 
-export const EVIDENCE_SOURCES = ['credential', 'hackathon', 'assessment', 'interview', 'presentation'] as const;
+export const EVIDENCE_SOURCES = ['credential', 'hackathon', 'assessment', 'interview', 'presentation', 'project'] as const;
 export type EvidenceSource = typeof EVIDENCE_SOURCES[number];
+type Page = { page?: number; pageSize?: number; status?: string; source?: string };
+type EvidenceInput = { source: EvidenceSource; title: string; provider?: string; issuer?: string; referenceUrl?: string; referenceId?: string; issuedAt?: string; expiresAt?: string; description?: string; visibility?: 'PRIVATE'|'RECRUITERS'|'PUBLIC'; metadata?: Record<string, unknown> };
+const editable = new Set(['DRAFT', 'REJECTED']);
+const transitions: Record<string, string[]> = { DRAFT:['SUBMITTED'], REJECTED:['DRAFT'], SUBMITTED:['UNDER_REVIEW'], UNDER_REVIEW:['VERIFIED','REJECTED'], VERIFIED:['EXPIRED'] };
+const mimeTypes = new Set(['application/pdf','image/jpeg','image/png','image/webp']);
+const maxBytes = 10 * 1024 * 1024;
+function pageOf(input: Page) { const page=Math.max(1, Number(input.page)||1); const pageSize=Math.min(100, Math.max(1, Number(input.pageSize)||20)); return { page, pageSize, skip:(page-1)*pageSize }; }
+function validate(input: EvidenceInput) { if (!EVIDENCE_SOURCES.includes(input.source)) throw new Error('Unsupported evidence source'); if (!input.title?.trim()) throw new Error('A title is required'); for (const value of [input.referenceUrl]) if (value) { const url=new URL(value); if (!['http:','https:'].includes(url.protocol)) throw new Error('referenceUrl must be HTTP(S)'); } }
+async function audit(candidateId:string, actorId:string, action:string, entityType:string, entityId:string, detail?:unknown) { return prisma.auditLog.create({data:{candidateId,actorId,action,entityType,entityId,detail:detail ? JSON.stringify(detail) : null}}); }
 
-type EvidenceInput = {
-  source: EvidenceSource;
-  title: string;
-  provider?: string;
-  issuer?: string;
-  referenceUrl?: string;
-  referenceId?: string;
-  issuedAt?: string;
-  metadata?: Record<string, unknown>;
-};
-
-function validateInput(input: EvidenceInput) {
-  if (!EVIDENCE_SOURCES.includes(input.source)) throw new Error('Unsupported evidence source');
-  if (!input.title?.trim()) throw new Error('A title is required');
-  if (input.referenceUrl) {
-    try {
-      const url = new URL(input.referenceUrl);
-      if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
-    } catch { throw new Error('referenceUrl must be a valid HTTP(S) URL'); }
-  }
-}
-
-export async function submitEvidence(candidateId: string, input: EvidenceInput) {
-  validateInput(input);
-  const candidate = await prisma.candidate.findUnique({ where: { id: candidateId }, select: { id: true } });
-  if (!candidate) throw new Error('Candidate not found');
-  return prisma.evidence.create({
-    data: {
-      candidateId,
-      source: input.source,
-      title: input.title.trim(),
-      provider: input.provider?.trim() || null,
-      issuer: input.issuer?.trim() || null,
-      referenceUrl: input.referenceUrl || null,
-      referenceId: input.referenceId?.trim() || null,
-      issuedAt: input.issuedAt ? new Date(input.issuedAt) : null,
-      metadata: input.metadata ? JSON.stringify(input.metadata) : null,
-    },
-  });
-}
-
-export async function reviewEvidence(evidenceId: string, decision: 'verified' | 'rejected', score?: number) {
-  if (decision === 'verified' && (score === undefined || !Number.isFinite(score) || score < 0 || score > 100)) {
-    throw new Error('A verification score from 0 to 100 is required');
-  }
-  const evidence = await prisma.evidence.update({
-    where: { id: evidenceId },
-    data: { status: decision, score: decision === 'verified' ? score : null, verifiedAt: new Date() },
-  });
-  await calculateAndStoreTalentScore(evidence.candidateId);
-  return evidence;
-}
-
-export async function getCandidateEvidence(candidateId: string) {
-  return prisma.evidence.findMany({ where: { candidateId }, orderBy: { submittedAt: 'desc' } });
-}
+export async function listEvidence(candidateId:string, input:Page={}) { const {page,pageSize,skip}=pageOf(input); const where={candidateId,...(input.status ? {status:input.status as never}:{}),...(input.source?{source:input.source}:{})}; const [evidence,total]=await prisma.$transaction([prisma.evidence.findMany({where,include:{reviews:{orderBy:{createdAt:'desc'}},attachments:true},orderBy:{updatedAt:'desc'},skip,take:pageSize}),prisma.evidence.count({where})]); return {evidence,page,pageSize,total}; }
+export async function getEvidence(candidateId:string, id:string) { const evidence=await prisma.evidence.findFirst({where:{id,candidateId},include:{reviews:{orderBy:{createdAt:'desc'}},attachments:true,verificationRuns:true}}); if (!evidence) throw new Error('Evidence not found'); return evidence; }
+export async function createEvidence(candidateId:string, input:EvidenceInput, actorId=candidateId) { validate(input); const evidence=await prisma.evidence.create({data:{candidateId,source:input.source,title:input.title.trim(),provider:input.provider?.trim()||null,issuer:input.issuer?.trim()||null,referenceUrl:input.referenceUrl||null,referenceId:input.referenceId?.trim()||null,issuedAt:input.issuedAt?new Date(input.issuedAt):null,expiresAt:input.expiresAt?new Date(input.expiresAt):null,description:input.description?.trim()||null,visibility:(input.visibility||'PRIVATE') as never,metadata:input.metadata?JSON.stringify(input.metadata):null,submittedBy:actorId}}); await audit(candidateId,actorId,'evidence.created','evidence',evidence.id); return evidence; }
+export async function updateEvidence(candidateId:string,id:string,input:Partial<EvidenceInput>,actorId=candidateId) { const current=await getEvidence(candidateId,id); if (!editable.has(String(current.status))) throw new Error('Only drafts or rejected evidence can be edited'); const next={...current,...input} as EvidenceInput; validate(next); const evidence=await prisma.evidence.update({where:{id},data:{...(input.title!==undefined?{title:input.title.trim()}:{}),...(input.provider!==undefined?{provider:input.provider?.trim()||null}:{}),...(input.issuer!==undefined?{issuer:input.issuer?.trim()||null}:{}),...(input.referenceUrl!==undefined?{referenceUrl:input.referenceUrl||null}:{}),...(input.referenceId!==undefined?{referenceId:input.referenceId?.trim()||null}:{}),...(input.description!==undefined?{description:input.description?.trim()||null}:{}),...(input.visibility?{visibility:input.visibility as never}:{}),...(input.metadata?{metadata:JSON.stringify(input.metadata)}:{})}}); await audit(candidateId,actorId,'evidence.updated','evidence',id); return evidence; }
+export async function submitEvidence(candidateId:string,id:string,actorId=candidateId) { const current=await getEvidence(candidateId,id); if (!transitions[String(current.status)]?.includes('SUBMITTED')) throw new Error('Evidence cannot be submitted in its current status'); const evidence=await prisma.$transaction(async tx=>{ const value=await tx.evidence.update({where:{id},data:{status:'SUBMITTED' as never,submittedAt:new Date(),submittedBy:actorId}}); await tx.verificationRun.create({data:{candidateId,evidenceId:id,source:value.source,status:'queued'}}); await tx.auditLog.create({data:{candidateId,actorId,action:'evidence.submitted',entityType:'evidence',entityId:id}}); return value; }); return evidence; }
+export async function beginReview(evidenceId:string,reviewerId:string,reviewerName?:string) { const evidence=await prisma.evidence.findUnique({where:{id:evidenceId}}); if (!evidence) throw new Error('Evidence not found'); if (!transitions[String(evidence.status)]?.includes('UNDER_REVIEW')) throw new Error('Evidence is not available for review'); return prisma.$transaction(async tx=>{const value=await tx.evidence.update({where:{id:evidenceId},data:{status:'UNDER_REVIEW' as never}});await tx.auditLog.create({data:{candidateId:value.candidateId,actorId:reviewerId,action:'evidence.review_started',entityType:'evidence',entityId:evidenceId,detail:reviewerName||null}});return value;}); }
+export async function reviewEvidence(evidenceId:string, reviewerId:string, decision:'verified'|'rejected', reason?:string, score?:number) { const evidence=await prisma.evidence.findUnique({where:{id:evidenceId}}); if (!evidence) throw new Error('Evidence not found'); const target=decision.toUpperCase(); if (!transitions[String(evidence.status)]?.includes(target)) throw new Error('Evidence must be under review'); if (decision==='verified' && (!Number.isFinite(score)||score! < 0||score! >100)) throw new Error('A verification score from 0 to 100 is required'); if (decision==='rejected'&&!reason?.trim()) throw new Error('A rejection reason is required'); const result=await prisma.$transaction(async tx=>{const value=await tx.evidence.update({where:{id:evidenceId},data:{status:target as never,score:decision==='verified'?score!:null,verifiedAt:new Date()}});await tx.evidenceReview.create({data:{evidenceId,reviewerId,decision:target as never,reason:reason?.trim()||null,score:decision==='verified'?score!:null}});await tx.auditLog.create({data:{candidateId:value.candidateId,actorId:reviewerId,action:`evidence.${decision}`,entityType:'evidence',entityId:evidenceId,detail:reason||null}});return value;}); await calculateAndStoreTalentScore(result.candidateId); return result; }
+export async function appealEvidence(candidateId:string,id:string,reason:string,actorId=candidateId) { if(!reason?.trim()) throw new Error('An appeal or correction note is required'); const current=await getEvidence(candidateId,id); if(String(current.status)!=='REJECTED') throw new Error('Only rejected evidence can be corrected'); const evidence=await prisma.evidence.update({where:{id},data:{status:'DRAFT' as never,metadata:JSON.stringify({...safeJson(current.metadata),appeal:reason.trim()})}}); await audit(candidateId,actorId,'evidence.appealed','evidence',id,{reason}); return evidence; }
+export async function deleteEvidence(candidateId:string,id:string,actorId=candidateId) { const current=await getEvidence(candidateId,id); if(!editable.has(String(current.status))) throw new Error('Only drafts or rejected evidence can be deleted'); await prisma.$transaction([prisma.evidence.delete({where:{id}}),prisma.auditLog.create({data:{candidateId,actorId,action:'evidence.deleted',entityType:'evidence',entityId:id}})]); }
+function safeJson(value:string|null) { try{return value?JSON.parse(value):{}}catch{return {}} }
+export async function reviewQueue(input:Page={}) { const {page,pageSize,skip}=pageOf(input); const where={status:{in:['SUBMITTED','UNDER_REVIEW'] as never[]}};const [evidence,total]=await prisma.$transaction([prisma.evidence.findMany({where,include:{candidate:{select:{id:true,name:true,email:true}}},orderBy:{submittedAt:'asc'},skip,take:pageSize}),prisma.evidence.count({where})]);return {evidence,page,pageSize,total}; }
+export async function createAttachmentIntent(candidateId:string,evidenceId:string|undefined,input:{name:string;contentType:string;sizeBytes:number},actorId=candidateId) { if(!mimeTypes.has(input.contentType)||!Number.isInteger(input.sizeBytes)||input.sizeBytes<1||input.sizeBytes>maxBytes) throw new Error('Unsupported file type or file exceeds 10 MB'); if(evidenceId) await getEvidence(candidateId,evidenceId); const id=randomUUID();const attachment=await prisma.attachment.create({data:{id,candidateId,evidenceId: evidenceId||null,storageKey:`private/candidates/${candidateId}/${id}`,originalName:input.name.replace(/[\\/]/g,'_'),contentType:input.contentType,sizeBytes:input.sizeBytes}});await audit(candidateId,actorId,'attachment.upload_requested','attachment',id);return {attachment,upload:{method:'PUT',url:`/api/attachments/${id}/upload`,expiresAt:new Date(Date.now()+15*60_000)}}; }
+export async function completeAttachment(candidateId:string,id:string,scanStatus:'CLEAN'|'FAILED'|'QUARANTINED',actorId=candidateId) { const attachment=await prisma.attachment.findFirst({where:{id,candidateId}});if(!attachment)throw new Error('Attachment not found');const value=await prisma.attachment.update({where:{id},data:{scanStatus:scanStatus as never,uploadedAt:scanStatus==='CLEAN'?new Date():null}});await audit(candidateId,actorId,'attachment.scanned','attachment',id,{scanStatus});return value; }
+export async function getDownload(candidateId:string,id:string) { const attachment=await prisma.attachment.findFirst({where:{id,candidateId}});if(!attachment||String(attachment.scanStatus)!=='CLEAN')throw new Error('Attachment is unavailable');return {url:`/api/attachments/${id}/download`,expiresAt:new Date(Date.now()+5*60_000)}; }
+export async function expireEvidence(now=new Date()) { const result=await prisma.evidence.updateMany({where:{expiresAt:{lt:now},status:'VERIFIED' as never},data:{status:'EXPIRED' as never}});return result.count; }

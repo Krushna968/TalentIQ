@@ -67,6 +67,7 @@ function GitHubTab({ candidateId, onScore }) {
   const [profile, setProfile] = useState(null);
   const [message, setMessage] = useState('');
   const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [talentScore, setTalentScore] = useState(null);
 
   useEffect(() => {
@@ -109,6 +110,23 @@ function GitHubTab({ candidateId, onScore }) {
     }
   };
 
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    setMessage('Disconnecting GitHub...');
+    try {
+      await githubApi.disconnect(candidateId);
+      setProfile(null);
+      setTalentScore(null);
+      onScore?.(null);
+      setStatus('disconnected');
+      setMessage('GitHub account disconnected.');
+    } catch (err) {
+      setMessage('Unable to disconnect GitHub: ' + err.message);
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   if (status === 'loading') {
     return <section className="glass-panel" style={{ padding: 32, textAlign: 'center' }}><p className="muted">Checking GitHub connection...</p></section>;
   }
@@ -140,9 +158,10 @@ function GitHubTab({ candidateId, onScore }) {
           <div className="eyebrow">Connected source</div>
           <h2>GitHub Profile</h2>
         </div>
-        <button className="btn btn-secondary" onClick={handleSync} style={{ fontSize: 12, padding: '6px 14px' }}>
-          Re-sync
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-secondary" onClick={handleSync} disabled={disconnecting} style={{ fontSize: 12, padding: '6px 14px' }}>Re-sync</button>
+          <button className="btn btn-secondary" onClick={handleDisconnect} disabled={disconnecting} style={{ fontSize: 12, padding: '6px 14px', color: '#ff9da2' }}>{disconnecting ? 'Disconnecting...' : 'Disconnect'}</button>
+        </div>
       </div>
 
       {profile && (
@@ -243,6 +262,23 @@ function LinkedInTab({ candidateId }) {
     } catch (error) {
       setConnecting(false);
       setMessage(error.message || 'LinkedIn connection is unavailable.');
+    }
+  };
+
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    setMessage('Disconnecting GitHub...');
+    try {
+      await githubApi.disconnect(candidateId);
+      setProfile(null);
+      setTalentScore(null);
+      onScore?.(null);
+      setStatus('disconnected');
+      setMessage('GitHub account disconnected.');
+    } catch (err) {
+      setMessage('Unable to disconnect GitHub: ' + err.message);
+    } finally {
+      setDisconnecting(false);
     }
   };
 

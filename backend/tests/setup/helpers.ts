@@ -8,8 +8,8 @@ export async function resetDb() {
   await prisma.pipelineEntry.deleteMany();
   await prisma.pipelineStage.deleteMany();
   await prisma.jobCollaborator.deleteMany();
-  await prisma.auditLog.deleteMany();
-  await prisma.job.deleteMany();
+  await prisma.recruiterAuditLog.deleteMany();
+  await prisma.requisition.deleteMany();
   await prisma.membership.deleteMany();
   await prisma.organization.deleteMany();
   await prisma.candidate.deleteMany();

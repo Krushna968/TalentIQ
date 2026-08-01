@@ -21,6 +21,10 @@ export const initiateOAuth = async (req: Request, res: Response) => {
 };
 
 export const createPreviewConnection = async (req: Request, res: Response) => {
+  if (env.NODE_ENV === 'production') {
+    res.status(404).json({ error: 'LinkedIn preview connections are not available in production.' });
+    return;
+  }
   try {
     const candidateId = req.body.candidateId as string | undefined;
     if (!candidateId) return res.status(400).json({ error: 'A candidateId is required.' });

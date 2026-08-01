@@ -19,7 +19,7 @@ describe('pipeline routes (HTTP)', () => {
     await prisma.membership.create({ data: { orgId: 'orgB', userId: 'intruder', role: 'owner' } });
 
     const res = await request(app)
-      .get(`/api/jobs/${job.id}/pipeline`)
+      .get(`/api/requisitions/${job.id}/pipeline`)
       .set('x-user-id', 'intruder')
       .set('x-org-id', 'orgB');
     expect(res.status).toBe(403);
@@ -29,7 +29,7 @@ describe('pipeline routes (HTTP)', () => {
     await seedTenant({ orgId: 'orgA', userId: 'owner1', candidateId: 'cand1' });
     const job = await jobs.createJob(fakeReq(OWNER), { title: 'Empty role' });
 
-    const res = await asOwner(request(app).get(`/api/jobs/${job.id}/pipeline`));
+    const res = await asOwner(request(app).get(`/api/requisitions/${job.id}/pipeline`));
     expect(res.status).toBe(200);
     expect(res.body.entries).toEqual([]);
     expect(res.body.stages).toHaveLength(6);
