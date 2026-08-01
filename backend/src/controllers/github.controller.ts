@@ -3,27 +3,25 @@ import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import * as githubService from '../services/github.service.js';
 import { createGitHubOAuthState, verifyGitHubOAuthState } from '../services/github-oauth-state.service.js';
-import { decryptSecret } from '../services/secret-crypto.service.js';
-import { resolveCandidateId, resolveWritableCandidateId } from '../middleware/auth.middleware.js';
-import type { AuthenticatedRequest } from '../types/index.js';
-import { handle, notFound, badRequest, unavailable } from '../utils/http.js';
-import { logger } from '../utils/logger.js';
 
-export const initiateOAuth = handle<AuthenticatedRequest, Response>('github.initiateOAuth', async (req, res) => {
-  // The candidate always comes from the session, so a caller cannot start an
-  // OAuth flow that attaches a GitHub account to somebody else's profile.
-  const candidateId = resolveWritableCandidateId(req);
+export const initiateOAuth = async (req: Request, res: Response) => {
+  const candidateId = req.query.candidateId as string | undefined;
+  if (!candidateId) {
+    res.status(400).json({ error: 'A candidateId is required to connect GitHub.' });
+    return;
+  }
 
   const candidate = await prisma.candidate.findUnique({ where: { id: candidateId }, select: { id: true } });
-  if (!candidate) throw notFound('Candidate not found.');
-
-  try {
-    const state = createGitHubOAuthState(candidate.id);
-    res.json({ url: githubService.getOAuthUrl(state) });
-  } catch (error) {
-    throw unavailable(error instanceof Error ? error.message : 'GitHub OAuth is unavailable.');
+  if (!candidate) {
+    res.status(404).json({ error: 'Candidate not found.' });
+    return;
   }
-});
+
+  // When production login replaces the demo session, candidateId must come from req.user, not the query string.
+  const state = createGitHubOAuthState(candidate.id);
+  const url = githubService.getOAuthUrl(state);
+  res.json({ url });
+};
 
 export const handleCallback = async (req: Request, res: Response) => {
   const code = req.query.code as string | undefined;
@@ -49,59 +47,67 @@ export const handleCallback = async (req: Request, res: Response) => {
     }
 
     await githubService.syncCandidateFromGitHub(candidate.id, accessToken);
-    res.redirect(`${env.FRONTEND_URL}/candidate?github=connected&user=${encodeURIComponent(ghUser.login)}`);
+    res.redirect(`${env.FRONTEND_URL}/candidate?github=connected&user=${ghUser.login}`);
   } catch (err) {
-    logger.error('GitHub OAuth callback failed', err);
+    console.error('GitHub OAuth callback error', err);
     res.redirect(`${env.FRONTEND_URL}/candidate?github=error&message=callback_failed`);
   }
 };
 
-export const getProfile = handle<AuthenticatedRequest, Response>('github.getProfile', async (req, res) => {
-  const candidateId = resolveCandidateId(req, req.params.candidateId);
-  const profile = await githubService.getGitHubProfile(candidateId);
-  if (!profile) throw notFound('GitHub is not connected for this candidate.');
-  res.json(profile);
-});
-
-export const triggerSync = handle<AuthenticatedRequest, Response>('github.triggerSync', async (req, res) => {
-  const candidateId = resolveWritableCandidateId(req, req.params.candidateId);
-  const connection = await prisma.githubConnection.findUnique({ where: { candidateId } });
-  if (!connection) throw badRequest('GitHub is not connected for this candidate.');
-
+export const getProfile = async (req: Request, res: Response) => {
   try {
-    await githubService.syncCandidateFromGitHub(candidateId, decryptSecret(connection.accessToken));
+    const candidateId = req.params.candidateId as string;
+    const profile = await githubService.getGitHubProfile(candidateId);
+    if (!profile) {
+      res.status(404).json({ error: 'GitHub not connected' });
+      return;
+    }
+    res.json(profile);
+  } catch (err) {
+    console.error('Error fetching GitHub profile', err);
+    res.status(500).json({ error: 'Failed to fetch GitHub profile' });
+  }
+};
+
+export const triggerSync = async (req: Request, res: Response) => {
+  try {
+    const candidateId = req.params.candidateId as string;
+    const connection = await prisma.githubConnection.findUnique({
+      where: { candidateId },
+    });
+    if (!connection) {
+      res.status(400).json({ error: 'GitHub not connected' });
+      return;
+    }
+
+    await githubService.syncCandidateFromGitHub(candidateId, connection.accessToken);
     res.json({ message: 'Sync completed' });
   } catch (err) {
-    logger.error('GitHub sync failed', { candidateId, error: err });
-    await prisma.githubConnection.updateMany({ where: { candidateId }, data: { syncStatus: 'failed' } });
-    res.status(502).json({ error: 'GitHub sync failed. Previously synced evidence has been kept.' });
+    console.error('Error syncing GitHub', err);
+    res.status(500).json({ error: 'Sync failed' });
   }
-});
+};
 
-export const checkConnection = handle<AuthenticatedRequest, Response>('github.checkConnection', async (req, res) => {
-  const candidateId = resolveCandidateId(req, req.params.candidateId);
-  const connection = await prisma.githubConnection.findUnique({
-    where: { candidateId },
-    select: {
-      githubUsername: true,
-      avatarUrl: true,
-      name: true,
-      connectedAt: true,
-      lastSyncedAt: true,
-      syncStatus: true,
-      publicRepos: true,
-      followers: true,
-      following: true,
-    },
-  });
-  res.json({ connected: Boolean(connection), profile: connection });
-});
-
-export const disconnect = handle<AuthenticatedRequest, Response>('github.disconnect', async (req, res) => {
-  const candidateId = resolveWritableCandidateId(req, req.params.candidateId);
-  await prisma.$transaction([
-    prisma.githubConnection.deleteMany({ where: { candidateId } }),
-    prisma.candidate.update({ where: { id: candidateId }, data: { githubConnected: false, githubScore: null } }),
-  ]);
-  res.status(204).send();
-});
+export const checkConnection = async (req: Request, res: Response) => {
+  try {
+    const candidateId = req.params.candidateId as string;
+    const connection = await prisma.githubConnection.findUnique({
+      where: { candidateId },
+      select: {
+        githubUsername: true,
+        avatarUrl: true,
+        name: true,
+        connectedAt: true,
+        lastSyncedAt: true,
+        syncStatus: true,
+        publicRepos: true,
+        followers: true,
+        following: true,
+      },
+    });
+    res.json({ connected: !!connection, profile: connection });
+  } catch (err) {
+    console.error('Error checking GitHub connection', err);
+    res.status(500).json({ error: 'Failed to check connection' });
+  }
+};

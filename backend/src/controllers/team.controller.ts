@@ -1,17 +1,16 @@
-import type { Response } from 'express';
-import type { AuthenticatedRequest } from '../types/index.js';
-import { teamContributions } from '../services/recruiter.service.js';
-import { resolveCandidateId } from '../middleware/auth.middleware.js';
-import { handle } from '../utils/http.js';
+import { Request, Response } from 'express';
+import { candidates } from '../data/demo.js';
 
-export const getTeamContributions = handle<AuthenticatedRequest, Response>('team.contributions', async (req, res) => {
-  const candidateId = resolveCandidateId(req, req.params.userId);
-  const result = await teamContributions(candidateId);
-  res.json({ candidateId, ...result });
-});
+export const getTeamContributions = async (req: Request, res: Response) => {
+  const c = candidates.find(c => c.id === req.params.userId);
+  res.json({ user: c || candidates[0], contributions: [
+    { type: 'commits', count: 342, period: 'last 90 days' },
+    { type: 'pull_requests', count: 28, merged: 24 },
+    { type: 'reviews', count: 45 },
+    { type: 'projects', count: 6 },
+  ]});
+};
 
-export const getImpactScore = handle<AuthenticatedRequest, Response>('team.impact', async (req, res) => {
-  const candidateId = resolveCandidateId(req, req.params.userId);
-  const result = await teamContributions(candidateId);
-  res.json({ candidateId, available: result.available, ...(result.impact ?? { impactScore: 0, breakdown: null }) });
-});
+export const getImpactScore = async (req: Request, res: Response) => {
+  res.json({ userId: req.params.userId, impactScore: 87, breakdown: { code: 92, review: 78, mentorship: 84, leadership: 80 } });
+};

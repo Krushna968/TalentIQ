@@ -20,7 +20,6 @@ routes.use('/auth', authRoutes);
 routes.use('/candidates', candidateRoutes);
 routes.use('/candidates', githubRoutes);
 routes.use('/candidates/:candidateId/evidence', evidenceRoutes);
-routes.use('/evidence', evidenceRoutes);
 routes.use('/recruiters', recruiterRoutes);
 routes.use('/verification', verificationRoutes);
 routes.use('/matching', matchingRoutes);
@@ -33,4 +32,3 @@ routes.use('/hackathons', hackathonRoutes);
 routes.use('/trust', trustRoutes);
 
 export { routes };
-

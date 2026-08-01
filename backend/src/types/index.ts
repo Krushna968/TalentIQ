@@ -1,21 +1,11 @@
 import { Request } from 'express';
 
-export type Role = 'candidate' | 'recruiter' | 'reviewer' | 'admin';
-
-export interface AuthPrincipal {
-  /** User record id. This is never the candidate id. */
-  id: string;
-  email: string;
-  name: string;
-  role: Role;
-  /** Set when the signed-in user owns a candidate profile. */
-  candidateId?: string;
-  /** Set when the signed-in user is a recruiter. */
-  recruiterId?: string;
-}
-
 export interface AuthenticatedRequest extends Request {
-  user?: AuthPrincipal;
+  user?: {
+    id: string;
+    email: string;
+    role: 'candidate' | 'recruiter' | 'admin';
+  };
 }
 
 export interface PaginationParams {

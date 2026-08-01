@@ -1,56 +1,33 @@
-import type { Response } from 'express';
-import type { AuthenticatedRequest } from '../types/index.js';
-import * as interviews from '../services/interview.service.js';
-import { resolveCandidateId, resolveWritableCandidateId } from '../middleware/auth.middleware.js';
-import { handle, param } from '../utils/http.js';
+import { Request, Response } from 'express';
 
-const sessionId = (req: AuthenticatedRequest) => param(req.params.id || req.params.sessionId);
+export const getQuestions = async (_req: Request, res: Response) => {
+  res.json({ questions: [
+    { id: 'q1', question: 'Design a rate-limiting system for a distributed API gateway.', category: 'System Design' },
+    { id: 'q2', question: 'Explain how you would implement a feature store for ML models.', category: 'ML Engineering' },
+    { id: 'q3', question: 'Walk through your approach to debugging a production outage.', category: 'Problem Solving' },
+    { id: 'q4', question: 'How would you optimize a slow GraphQL resolver chain?', category: 'Performance' },
+    { id: 'q5', question: 'Describe the trade-offs between microservices and monoliths.', category: 'Architecture' },
+  ]});
+};
 
-export const getQuestions = handle<AuthenticatedRequest, Response>('interview.questions', async (req, res) => {
-  const candidateId = resolveCandidateId(req, req.query.candidateId);
-  const type = (param(req.query.type) || 'technical').toUpperCase() as interviews.InterviewType;
-  const count = Number(param(req.query.count)) || 5;
-  res.json(await interviews.previewQuestions(candidateId, type, count));
-});
+export const submitAnswer = async (req: Request, res: Response) => {
+  res.json({ score: Math.floor(Math.random() * 30) + 70, feedback: 'Strong answer. Consider discussing trade-offs more explicitly.', nextQuestion: 'q2' });
+};
 
-export const startSession = handle<AuthenticatedRequest, Response>('interview.start', async (req, res) => {
-  const candidateId = resolveWritableCandidateId(req, req.body.candidateId);
-  const session = await interviews.startSession({
-    candidateId,
-    type: req.body.type,
-    jobId: req.body.jobId,
-    questionCount: req.body.questionCount,
-  });
-  res.status(201).json({ session });
-});
+export const getSessions = async (_req: Request, res: Response) => {
+  res.json({ sessions: [
+    { id: 's1', type: 'technical', status: 'completed', score: 86, date: new Date() },
+    { id: 's2', type: 'behavioral', status: 'in_progress', score: null, date: new Date() },
+  ]});
+};
 
-export const submitAnswer = handle<AuthenticatedRequest, Response>('interview.submit', async (req, res) => {
-  const candidateId = resolveWritableCandidateId(req, req.body.candidateId);
-  const result = await interviews.submitAnswer({
-    sessionId: param(req.params.id) || req.body.sessionId,
-    questionId: req.body.questionId,
-    answer: req.body.answer,
-    candidateId,
-  });
-  res.json(result);
-});
+export const getSession = async (req: Request, res: Response) => {
+  res.json({ id: req.params.id, type: 'technical', status: 'completed', questions: [
+    { id: 'q1', question: 'Design a rate-limiting system...', score: 88, feedback: 'Good system design approach.' },
+    { id: 'q2', question: 'Explain a feature store...', score: 84, feedback: 'Solid understanding.' },
+  ], overallScore: 86 });
+};
 
-export const completeSession = handle<AuthenticatedRequest, Response>('interview.complete', async (req, res) => {
-  const candidateId = resolveWritableCandidateId(req, req.body?.candidateId);
-  res.json({ session: await interviews.completeSession(sessionId(req), candidateId) });
-});
-
-export const getSessions = handle<AuthenticatedRequest, Response>('interview.sessions', async (req, res) => {
-  res.json({ sessions: await interviews.listSessions(resolveCandidateId(req, req.query.candidateId)) });
-});
-
-export const getSession = handle<AuthenticatedRequest, Response>('interview.session', async (req, res) => {
-  // Recruiters and reviewers may read any session; candidates only their own.
-  const scope = req.user!.role === 'candidate' ? resolveCandidateId(req) : undefined;
-  res.json({ session: await interviews.getSession(sessionId(req), scope) });
-});
-
-export const getInterviewReport = handle<AuthenticatedRequest, Response>('interview.report', async (req, res) => {
-  const scope = req.user!.role === 'candidate' ? resolveCandidateId(req) : undefined;
-  res.json(await interviews.getReport(sessionId(req), scope));
-});
+export const getInterviewReport = async (req: Request, res: Response) => {
+  res.json({ sessionId: req.params.sessionId, scores: { technicalAccuracy: 85, communication: 78, problemSolving: 92, overall: 86 }, strengths: ['System design', 'Problem decomposition'], improvements: ['Communication clarity'] });
+};

@@ -1,75 +1,48 @@
-import type { Response } from 'express';
-import type { AuthenticatedRequest } from '../types/index.js';
-import * as service from '../services/candidate.service.js';
-import { resolveCandidateId, resolveWritableCandidateId } from '../middleware/auth.middleware.js';
-import { handle, param } from '../utils/http.js';
+import { Request, Response } from 'express';
+import { candidates } from '../data/demo.js';
 
-const readable = (req: AuthenticatedRequest) => resolveCandidateId(req, req.query.id);
-const writable = (req: AuthenticatedRequest) => resolveWritableCandidateId(req, req.query.id);
-const roadmapId = (req: AuthenticatedRequest) => param(req.params.roadmapId);
+export const getDashboard = async (_req: Request, res: Response) => {
+  res.json({ candidates, total: candidates.length, stats: { avgScore: Math.round(candidates.reduce((a, c) => a + c.talentScore, 0) / candidates.length) } });
+};
 
-export const getDashboard = handle<AuthenticatedRequest, Response>('candidate.dashboard', async (req, res) => {
-  res.json(await service.dashboard(readable(req)));
-});
+export const getProfile = async (req: Request, res: Response) => {
+  const c = candidates.find(c => c.id === req.query.id);
+  res.json(c || candidates[0]);
+};
 
-export const getProfile = handle<AuthenticatedRequest, Response>('candidate.getProfile', async (req, res) => {
-  res.json(await service.profile(readable(req)));
-});
+export const updateProfile = async (req: Request, res: Response) => {
+  res.json({ ...candidates[0], ...req.body });
+};
 
-export const updateProfile = handle<AuthenticatedRequest, Response>('candidate.updateProfile', async (req, res) => {
-  res.json(await service.updateProfile(writable(req), req.body, req.user!.id));
-});
+export const getRoadmap = async (_req: Request, res: Response) => {
+  res.json({ steps: [
+    { name: 'Core Skills', detail: 'Master primary stack', done: true },
+    { name: 'Advanced Topics', detail: 'Deep dive into system design', done: true },
+    { name: 'Specialization', detail: 'Choose a focus area', done: false },
+    { name: 'Leadership', detail: 'Lead projects and mentor', done: false },
+  ]});
+};
 
-export const getRoadmap = handle<AuthenticatedRequest, Response>('candidate.getRoadmap', async (req, res) => {
-  res.json({ items: await service.listRoadmap(readable(req)) });
-});
+export const updateRoadmap = async (req: Request, res: Response) => {
+  res.json({ message: 'Roadmap updated', ...req.body });
+};
 
-export const createRoadmap = handle<AuthenticatedRequest, Response>('candidate.createRoadmap', async (req, res) => {
-  res.status(201).json({ item: await service.createRoadmap(writable(req), req.body) });
-});
+export const getResume = async (_req: Request, res: Response) => {
+  res.json({ candidate: candidates[0], templates: ['modern', 'classic', 'minimal'] });
+};
 
-export const updateRoadmap = handle<AuthenticatedRequest, Response>('candidate.updateRoadmap', async (req, res) => {
-  res.json({ item: await service.updateRoadmap(writable(req), roadmapId(req), req.body) });
-});
+export const generateResume = async (req: Request, res: Response) => {
+  res.json({ url: '/resumes/demo-resume.pdf', format: req.body.format || 'pdf' });
+};
 
-export const deleteRoadmap = handle<AuthenticatedRequest, Response>('candidate.deleteRoadmap', async (req, res) => {
-  await service.deleteRoadmap(writable(req), roadmapId(req));
-  res.status(204).end();
-});
+export const getJobRecommendations = async (_req: Request, res: Response) => {
+  res.json({ jobs: [
+    { id: 'j1', title: 'Senior Full-Stack Engineer', company: 'TechCorp', matchScore: 94 },
+    { id: 'j2', title: 'Frontend Architect', company: 'StartupXYZ', matchScore: 88 },
+    { id: 'j3', title: 'Node.js Backend Lead', company: 'ScaleUp Inc', matchScore: 82 },
+  ]});
+};
 
-export const getResume = handle<AuthenticatedRequest, Response>('candidate.getResume', async (req, res) => {
-  res.json({ resumes: await service.resumes(readable(req)), templates: ['modern', 'classic', 'minimal'] });
-});
-
-export const saveResume = handle<AuthenticatedRequest, Response>('candidate.saveResume', async (req, res) => {
-  res.status(201).json({ resume: await service.saveResume(writable(req), req.body) });
-});
-
-export const generateResume = handle<AuthenticatedRequest, Response>('candidate.generateResume', async (req, res) => {
-  res.json(await service.generateResumeDraft(readable(req), req.body?.targetRole));
-});
-
-export const getPortfolio = handle<AuthenticatedRequest, Response>('candidate.getPortfolio', async (req, res) => {
-  res.json(await service.generatePortfolio(readable(req)));
-});
-
-export const getJobRecommendations = handle<AuthenticatedRequest, Response>('candidate.jobs', async (req, res) => {
-  res.json(await service.jobs(readable(req), req.query));
-});
-
-export const applyToJob = handle<AuthenticatedRequest, Response>('candidate.applyToJob', async (req, res) => {
-  const application = await service.setApplication(writable(req), param(req.params.id), req.body.status || 'APPLIED', req.body.notes);
-  res.json({ application });
-});
-
-export const getSalaryPrediction = handle<AuthenticatedRequest, Response>('candidate.salary', async (req, res) => {
-  res.json(await service.predictSalary(readable(req)));
-});
-
-export const getLearningRecommendations = handle<AuthenticatedRequest, Response>('candidate.learning', async (req, res) => {
-  res.json(await service.recommendLearning(readable(req)));
-});
-
-export const getBadges = handle<AuthenticatedRequest, Response>('candidate.badges', async (req, res) => {
-  res.json({ badges: await service.badges(readable(req)) });
-});
+export const applyToJob = async (req: Request, res: Response) => {
+  res.json({ message: `Applied to job ${req.params.id}` });
+};
