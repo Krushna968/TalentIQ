@@ -1,6 +1,7 @@
 import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import { calculateAndStoreTalentScore } from './talent-score.service.js';
+import { encryptSecret } from './secret-crypto.service.js';
 
 const AUTHORIZE_URL = 'https://www.linkedin.com/oauth/v2/authorization';
 const TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken';
@@ -43,12 +44,12 @@ export async function syncCandidateFromLinkedIn(candidateId: string, accessToken
   const connection = await prisma.linkedInConnection.upsert({
     where: { candidateId },
     create: {
-      candidateId, linkedInId: profile.sub, accessToken, tokenExpiresAt,
+      candidateId, linkedInId: profile.sub, accessToken: encryptSecret(accessToken), tokenExpiresAt,
       name: profile.name, email: profile.email, avatarUrl: profile.picture, locale: profile.locale,
       lastSyncedAt: new Date(), syncStatus: 'synced',
     },
     update: {
-      linkedInId: profile.sub, accessToken, tokenExpiresAt,
+      linkedInId: profile.sub, accessToken: encryptSecret(accessToken), tokenExpiresAt,
       name: profile.name, email: profile.email, avatarUrl: profile.picture, locale: profile.locale,
       lastSyncedAt: new Date(), syncStatus: 'synced',
     },

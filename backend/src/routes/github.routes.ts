@@ -8,6 +8,7 @@ const router = Router();
 router.get('/:candidateId/github/check', githubController.checkConnection);
 router.get('/:candidateId/github/profile', githubController.getProfile);
 router.post('/:candidateId/github/sync', githubController.triggerSync);
+router.delete('/:candidateId/github', githubController.disconnect);
 router.get('/:candidateId/talent-score', talentScoreController.getTalentScore);
 router.get('/:candidateId/linkedin/check', linkedInController.getConnection);
 

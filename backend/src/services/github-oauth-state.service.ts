@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { env } from '../config/env.js';
 
 const MAX_AGE_MS = 10 * 60 * 1000;
+const consumedNonces = new Map<string, number>();
 
 type OAuthStatePayload = { candidateId: string; provider: 'github' | 'linkedin'; nonce: string; createdAt: number };
 
@@ -28,6 +29,12 @@ export function verifyGitHubOAuthState(state: string | undefined, expectedProvid
   try {
     const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as OAuthStatePayload;
     if (!parsed.candidateId || parsed.provider !== expectedProvider || !parsed.nonce || !parsed.createdAt || Date.now() - parsed.createdAt > MAX_AGE_MS || parsed.createdAt > Date.now()) return null;
+    const now = Date.now();
+    for (const [nonce, expiresAt] of consumedNonces) {
+      if (expiresAt <= now) consumedNonces.delete(nonce);
+    }
+    if (consumedNonces.has(parsed.nonce)) return null;
+    consumedNonces.set(parsed.nonce, parsed.createdAt + MAX_AGE_MS);
     return parsed;
   } catch {
     return null;

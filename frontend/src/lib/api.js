@@ -10,12 +10,14 @@ async function request(path, options = {}) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || `HTTP ${res.status}`);
   }
+  if (res.status === 204) return null;
   return res.json();
 }
 
 export const api = {
   get: (path) => request(path),
   post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
+  delete: (path) => request(path, { method: 'DELETE' }),
 };
 
 export const githubApi = {
@@ -23,6 +25,7 @@ export const githubApi = {
   checkConnection: (candidateId) => api.get(`/candidates/${candidateId}/github/check`),
   getProfile: (candidateId) => api.get(`/candidates/${candidateId}/github/profile`),
   triggerSync: (candidateId) => api.post(`/candidates/${candidateId}/github/sync`),
+  disconnect: (candidateId) => api.delete(`/candidates/${candidateId}/github`),
   getTalentScore: (candidateId) => api.get(`/candidates/${candidateId}/talent-score`),
 };
 
