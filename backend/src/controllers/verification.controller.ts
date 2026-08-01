@@ -1,29 +1,87 @@
-import { Request, Response } from 'express';
+import type { Response } from 'express';
+import type { AuthenticatedRequest } from '../types/index.js';
+import { prisma } from '../lib/prisma.js';
+import { runAgents } from '../agents/orchestrator.js';
+import { evaluateAuthenticity } from '../services/fraud.service.js';
+import { listBadges } from '../services/career.service.js';
+import { computeTalentIntelligence } from '../services/intelligence.service.js';
+import { resolveCandidateId, resolveWritableCandidateId } from '../middleware/auth.middleware.js';
+import { handle, param, notFound } from '../utils/http.js';
 
-export const verifyGithub = async (req: Request, res: Response) => {
-  res.json({ status: 'verified', score: 92, details: { repos: 45, stars: 1200, contributions: 340 } });
+/**
+ * Verification endpoints. Each one re-runs the relevant agent against the
+ * candidate's stored evidence and returns the explainable result.
+ */
+
+const runOne = async (candidateId: string, agent: 'github' | 'certificate' | 'hackathon' | 'presentation') => {
+  const outcome = await runAgents(candidateId, { only: [agent] });
+  const result = outcome.results.find((entry) => entry.agent === agent);
+  if (!result) throw notFound(`The ${agent} agent produced no result`);
+  return {
+    status: (result.signals as { available?: boolean }).available === false ? 'unavailable' : 'verified',
+    score: result.score,
+    confidence: result.confidence,
+    summary: result.summary,
+    components: result.components,
+    details: result.signals,
+  };
 };
 
-export const verifyCertification = async (req: Request, res: Response) => {
-  res.json({ status: 'verified', score: 88, details: { provider: 'AWS', credential: 'AWS Certified Developer', verifiedAt: new Date() } });
-};
+export const verifyGithub = handle<AuthenticatedRequest, Response>('verification.github', async (req, res) => {
+  res.json(await runOne(resolveWritableCandidateId(req, req.body?.candidateId), 'github'));
+});
 
-export const verifyHackathon = async (req: Request, res: Response) => {
-  res.json({ status: 'verified', score: 85, details: { event: 'HackIndia 2023', rank: 'Runner-up', teamSize: 4 } });
-};
+export const verifyCertification = handle<AuthenticatedRequest, Response>('verification.certification', async (req, res) => {
+  res.json(await runOne(resolveWritableCandidateId(req, req.body?.candidateId), 'certificate'));
+});
 
-export const verifyPresentation = async (req: Request, res: Response) => {
-  res.json({ status: 'verified', score: 78, details: { event: 'ReactConf India 2023', type: 'Lightning Talk', duration: 15 } });
-};
+export const verifyHackathon = handle<AuthenticatedRequest, Response>('verification.hackathon', async (req, res) => {
+  res.json(await runOne(resolveWritableCandidateId(req, req.body?.candidateId), 'hackathon'));
+});
 
-export const getVerificationStatus = async (req: Request, res: Response) => {
-  res.json({ id: req.params.id, status: 'verified', overallScore: 86 });
-};
+export const verifyPresentation = handle<AuthenticatedRequest, Response>('verification.presentation', async (req, res) => {
+  res.json(await runOne(resolveWritableCandidateId(req, req.body?.candidateId), 'presentation'));
+});
 
-export const getBadges = async (_req: Request, res: Response) => {
-  res.json({ badges: [
-    { id: 'b1', label: 'GitHub Verified', type: 'github', issuedAt: new Date() },
-    { id: 'b2', label: 'AWS Certified', type: 'certification', issuedAt: new Date() },
-    { id: 'b3', label: 'Hackathon Champion', type: 'hackathon', issuedAt: new Date() },
-  ]});
-};
+/** Runs every agent plus the verification layer and returns the full picture. */
+export const verifyAll = handle<AuthenticatedRequest, Response>('verification.all', async (req, res) => {
+  const candidateId = resolveWritableCandidateId(req, req.body?.candidateId);
+  res.json(await computeTalentIntelligence(candidateId));
+});
+
+export const getVerificationStatus = handle<AuthenticatedRequest, Response>('verification.status', async (req, res) => {
+  const candidateId = resolveCandidateId(req, req.params.id);
+  const [candidate, evidence, runs] = await Promise.all([
+    prisma.candidate.findUnique({
+      where: { id: candidateId },
+      select: { authenticityScore: true, talentScore: true, scoredAt: true },
+    }),
+    prisma.evidence.groupBy({ by: ['status'], where: { candidateId }, _count: true }),
+    prisma.agentRun.findMany({
+      where: { candidateId },
+      orderBy: { startedAt: 'desc' },
+      take: 20,
+      select: { agent: true, status: true, score: true, engine: true, startedAt: true },
+    }),
+  ]);
+  if (!candidate) throw notFound('Candidate not found');
+
+  res.json({
+    candidateId,
+    overallScore: candidate.talentScore,
+    authenticityScore: candidate.authenticityScore,
+    lastScoredAt: candidate.scoredAt,
+    evidenceByStatus: Object.fromEntries(evidence.map((row) => [row.status, row._count])),
+    recentAgentRuns: runs,
+  });
+});
+
+export const getAuthenticityReport = handle<AuthenticatedRequest, Response>('verification.authenticity', async (req, res) => {
+  const candidateId = resolveCandidateId(req, req.params.id);
+  res.json(await evaluateAuthenticity(candidateId));
+});
+
+export const getBadges = handle<AuthenticatedRequest, Response>('verification.badges', async (req, res) => {
+  const candidateId = resolveCandidateId(req, param(req.query.candidateId));
+  res.json({ badges: await listBadges(candidateId) });
+});

@@ -1,19 +1,66 @@
-import { Response } from 'express';
+import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../types/index.js';
 import * as service from '../services/evidence.service.js';
-const candidateId=(req:AuthenticatedRequest)=>String(req.params.candidateId || req.user?.id);
-const fail=(res:Response,error:unknown)=>res.status(error instanceof Error && /not found/.test(error.message)?404:400).json({error:error instanceof Error?error.message:'Request failed'});
-export const list=async(req:AuthenticatedRequest,res:Response)=>{try{res.json(await service.listEvidence(candidateId(req),req.query as any));}catch(e){fail(res,e)}};
-export const get=async(req:AuthenticatedRequest,res:Response)=>{try{res.json({evidence:await service.getEvidence(candidateId(req),req.params.evidenceId)});}catch(e){fail(res,e)}};
-export const create=async(req:AuthenticatedRequest,res:Response)=>{try{res.status(201).json({evidence:await service.createEvidence(candidateId(req),req.body,req.user!.id)});}catch(e){fail(res,e)}};
-export const update=async(req:AuthenticatedRequest,res:Response)=>{try{res.json({evidence:await service.updateEvidence(candidateId(req),req.params.evidenceId,req.body,req.user!.id)});}catch(e){fail(res,e)}};
-export const submit=async(req:AuthenticatedRequest,res:Response)=>{try{res.json({evidence:await service.submitEvidence(candidateId(req),req.params.evidenceId,req.user!.id)});}catch(e){fail(res,e)}};
-export const appeal=async(req:AuthenticatedRequest,res:Response)=>{try{res.json({evidence:await service.appealEvidence(candidateId(req),req.params.evidenceId,req.body.reason,req.user!.id)});}catch(e){fail(res,e)}};
-export const remove=async(req:AuthenticatedRequest,res:Response)=>{try{await service.deleteEvidence(candidateId(req),req.params.evidenceId,req.user!.id);res.status(204).end();}catch(e){fail(res,e)}};
-export const queue=async(req:AuthenticatedRequest,res:Response)=>{try{res.json(await service.reviewQueue(req.query as any));}catch(e){fail(res,e)}};
-export const startReview=async(req:AuthenticatedRequest,res:Response)=>{try{res.json({evidence:await service.beginReview(req.params.evidenceId,req.user!.id,req.user!.email)});}catch(e){fail(res,e)}};
-export const review=async(req:AuthenticatedRequest,res:Response)=>{try{res.json({evidence:await service.reviewEvidence(req.params.evidenceId,req.user!.id,req.body.decision,req.body.reason,req.body.score)});}catch(e){fail(res,e)}};
-export const attachmentIntent=async(req:AuthenticatedRequest,res:Response)=>{try{res.status(201).json(await service.createAttachmentIntent(candidateId(req),req.params.evidenceId,req.body,req.user!.id));}catch(e){fail(res,e)}};
-export const attachmentComplete=async(req:AuthenticatedRequest,res:Response)=>{try{res.json({attachment:await service.completeAttachment(candidateId(req),req.params.attachmentId,req.body.scanStatus,req.user!.id)});}catch(e){fail(res,e)}};
-export const attachmentDownload=async(req:AuthenticatedRequest,res:Response)=>{try{res.json(await service.getDownload(candidateId(req),req.params.attachmentId));}catch(e){fail(res,e)}};
+import { resolveCandidateId, resolveWritableCandidateId } from '../middleware/auth.middleware.js';
+import { handle, param } from '../utils/http.js';
 
+const readable = (req: AuthenticatedRequest) => resolveCandidateId(req, req.params.candidateId);
+const writable = (req: AuthenticatedRequest) => resolveWritableCandidateId(req, req.params.candidateId);
+const evidenceId = (req: AuthenticatedRequest) => param(req.params.evidenceId);
+const attachmentId = (req: AuthenticatedRequest) => param(req.params.attachmentId);
+
+export const list = handle<AuthenticatedRequest, Response>('evidence.list', async (req, res) => {
+  res.json(await service.listEvidence(readable(req), req.query as never));
+});
+
+export const get = handle<AuthenticatedRequest, Response>('evidence.get', async (req, res) => {
+  res.json({ evidence: await service.getEvidence(readable(req), evidenceId(req)) });
+});
+
+export const create = handle<AuthenticatedRequest, Response>('evidence.create', async (req, res) => {
+  res.status(201).json({ evidence: await service.createEvidence(writable(req), req.body, req.user!.id) });
+});
+
+export const update = handle<AuthenticatedRequest, Response>('evidence.update', async (req, res) => {
+  res.json({ evidence: await service.updateEvidence(writable(req), evidenceId(req), req.body, req.user!.id) });
+});
+
+export const submit = handle<AuthenticatedRequest, Response>('evidence.submit', async (req, res) => {
+  res.json({ evidence: await service.submitEvidence(writable(req), evidenceId(req), req.user!.id) });
+});
+
+export const appeal = handle<AuthenticatedRequest, Response>('evidence.appeal', async (req, res) => {
+  res.json({ evidence: await service.appealEvidence(writable(req), evidenceId(req), req.body.reason, req.user!.id) });
+});
+
+export const remove = handle<AuthenticatedRequest, Response>('evidence.remove', async (req, res) => {
+  await service.deleteEvidence(writable(req), evidenceId(req), req.user!.id);
+  res.status(204).end();
+});
+
+export const queue = handle<AuthenticatedRequest, Response>('evidence.queue', async (req, res) => {
+  res.json(await service.reviewQueue(req.query as never));
+});
+
+export const startReview = handle<AuthenticatedRequest, Response>('evidence.startReview', async (req, res) => {
+  res.json({ evidence: await service.beginReview(evidenceId(req), req.user!.id, req.user!.email) });
+});
+
+export const review = handle<AuthenticatedRequest, Response>('evidence.review', async (req, res) => {
+  const { decision, reason, score } = req.body;
+  res.json({ evidence: await service.reviewEvidence(evidenceId(req), req.user!.id, decision, reason, score) });
+});
+
+export const attachmentIntent = handle<AuthenticatedRequest, Response>('evidence.attachmentIntent', async (req, res) => {
+  const intent = await service.createAttachmentIntent(writable(req), evidenceId(req) || undefined, req.body, req.user!.id);
+  res.status(201).json(intent);
+});
+
+export const attachmentComplete = handle<AuthenticatedRequest, Response>('evidence.attachmentComplete', async (req, res) => {
+  const attachment = await service.completeAttachment(writable(req), attachmentId(req), req.body.scanStatus, req.user!.id);
+  res.json({ attachment });
+});
+
+export const attachmentDownload = handle<AuthenticatedRequest, Response>('evidence.attachmentDownload', async (req, res) => {
+  res.json(await service.getDownload(readable(req), attachmentId(req)));
+});

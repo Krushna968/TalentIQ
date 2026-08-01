@@ -31,4 +31,10 @@ export const env = {
   LINKEDIN_CALLBACK_URL: process.env.LINKEDIN_CALLBACK_URL || 'http://localhost:4000/api/auth/linkedin/callback',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
+
+  // Optional AI provider. Every agent has a deterministic analyser, so the
+  // platform runs fully without any of these being set.
+  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
+  LLM_MODEL: process.env.LLM_MODEL || '',
 };

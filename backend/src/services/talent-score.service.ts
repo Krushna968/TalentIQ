@@ -61,79 +61,37 @@ export function calculateGitHubTalentScore(input: ScoreInput, now = new Date()):
   };
 }
 
-type VerifiedEvidence = { source: string; score: number | null; title: string };
-
-const SOURCE_WEIGHTS: Record<string, { label: string; weight: number }> = {
-  github: { label: 'GitHub proof of work', weight: 35 },
-  credential: { label: 'Verified credentials', weight: 20 },
-  hackathon: { label: 'Hackathon achievements', weight: 15 },
-  assessment: { label: 'Skill assessments', weight: 15 },
-  interview: { label: 'Interview performance', weight: 10 },
-  presentation: { label: 'Presentation evidence', weight: 5 },
-};
-
-function averageEvidence(evidence: VerifiedEvidence[], source: string) {
-  const scores = evidence.filter((item) => item.source === source && item.score !== null).map((item) => item.score as number);
-  return scores.length ? scores.reduce((total, score) => total + score, 0) / scores.length : null;
-}
-
-/** Reweights only verified sources so candidates are never penalised for sources they have not connected. */
+/**
+ * Recalculates and stores every score for a candidate.
+ *
+ * Composite scoring now lives in the Talent Intelligence Engine, which combines
+ * all seven agents plus the verification layer. This wrapper is kept because
+ * provider syncs and evidence reviews call it as their 'rescore now' hook.
+ *
+ * The engine imports the GitHub agent, which imports this module, so the import
+ * is deferred to call time to keep the module graph acyclic.
+ */
 export async function calculateAndStoreTalentScore(candidateId: string) {
-  const candidate = await prisma.candidate.findUnique({
-    where: { id: candidateId },
-    include: { linkedInConnection: { select: { id: true } }, evidence: { where: { status: 'verified' }, select: { source: true, score: true, title: true } } },
-  });
-  if (!candidate) return null;
-
-  const connection = await prisma.githubConnection.findUnique({
-    where: { candidateId },
-    include: { repos: { include: { commits: true } }, languageSummary: true },
-  });
-
-  const github = connection ? calculateGitHubTalentScore({
-    repos: connection.repos,
-    commits: connection.repos.flatMap((repo) => repo.commits),
-    languages: connection.languageSummary,
-    followers: connection.followers,
-    identityVerified: Boolean(candidate.linkedInConnection),
-  }) : null;
-  const verifiedEvidence = candidate.evidence as VerifiedEvidence[];
-  const sourceScores: Array<{ key: string; score: number; evidence: string }> = [];
-  if (github) sourceScores.push({ key: 'github', score: github.score, evidence: `${github.evidence.repositories} repositories and ${github.evidence.commits} sampled commits` });
-  for (const source of Object.keys(SOURCE_WEIGHTS).filter((key) => key !== 'github')) {
-    const score = averageEvidence(verifiedEvidence, source);
-    if (score !== null) sourceScores.push({ key: source, score, evidence: `${verifiedEvidence.filter((item) => item.source === source && item.score !== null).length} verified record(s)` });
-  }
-  const activeWeight = sourceScores.reduce((total, item) => total + SOURCE_WEIGHTS[item.key].weight, 0);
-  const overallScore = activeWeight ? Math.round(sourceScores.reduce((total, item) => total + item.score * SOURCE_WEIGHTS[item.key].weight, 0) / activeWeight) : 0;
-  const verifiedCount = verifiedEvidence.filter((item) => item.score !== null).length;
-  const confidence = Math.min(100, Math.round((github ? github.confidence * 0.65 : 0) + verifiedCount * 12 + (candidate.linkedInConnection ? 5 : 0)));
-  const components = sourceScores.map((item) => ({
-    key: item.key,
-    label: SOURCE_WEIGHTS[item.key].label,
-    score: Math.round(item.score * SOURCE_WEIGHTS[item.key].weight / 100),
-    max: SOURCE_WEIGHTS[item.key].weight,
-    evidence: item.evidence,
-  }));
-  const getSourceScore = (source: string, fallback = 0) => averageEvidence(verifiedEvidence, source) ?? fallback;
-  const radar = github ? github.radar.map((item) => ({ ...item })) : [
-    { axis: 'Tech Depth', value: 0 }, { axis: 'Innovation', value: 0 }, { axis: 'Leadership', value: 0 },
-    { axis: 'Velocity', value: 0 }, { axis: 'Collab', value: 0 }, { axis: 'Comms', value: 0 },
-  ];
-  radar[1].value = Math.round((radar[1].value + getSourceScore('hackathon')) / (getSourceScore('hackathon') ? 2 : 1));
-  radar[2].value = Math.round((radar[2].value + getSourceScore('interview') + getSourceScore('presentation')) / (1 + Number(getSourceScore('interview') > 0) + Number(getSourceScore('presentation') > 0)));
-  radar[4].value = Math.round((radar[4].value + getSourceScore('assessment')) / (getSourceScore('assessment') ? 2 : 1));
-  radar[5].value = Math.round((radar[5].value + getSourceScore('interview') + getSourceScore('presentation')) / (1 + Number(getSourceScore('interview') > 0) + Number(getSourceScore('presentation') > 0)));
-  const score: TalentScore = {
-    score: overallScore,
-    confidence,
-    components,
-    radar,
-    evidence: github ? { ...github.evidence, verified: verifiedCount } : { repositories: 0, commits: 0, languages: 0, stars: 0, forks: 0, verified: verifiedCount },
+  const { computeTalentIntelligence } = await import('./intelligence.service.js');
+  const intelligence = await computeTalentIntelligence(candidateId);
+  return {
+    score: intelligence.talentScore,
+    confidence: intelligence.confidence,
+    components: intelligence.components.map((item) => ({
+      key: item.key,
+      label: item.label,
+      score: item.contribution,
+      max: item.weight,
+      evidence: item.evidence,
+    })),
+    radar: intelligence.radar,
+    evidence: {
+      repositories: 0,
+      commits: 0,
+      languages: 0,
+      stars: 0,
+      forks: 0,
+      verified: intelligence.skills.filter((skill) => skill.verified).length,
+    },
   };
-  await prisma.candidate.update({
-    where: { id: candidateId },
-    data: { githubScore: github?.score ?? null, talentScore: score.score, radarData: JSON.stringify(score.radar), signals: JSON.stringify(score) },
-  });
-  return score;
 }
