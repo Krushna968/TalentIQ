@@ -1,0 +1,10 @@
+{
+  "name": "talentiq-proof-to-hire-passport",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/passport.js && node --check src/app.js",
+    "verify-score": "node --input-type=module -e \"import { candidate, role, buildPassport } from './src/passport.js'; const result = buildPassport(candidate, role); if (!result.readiness || !result.confidence || !result.decision) process.exit(1); console.log(JSON.stringify({ readiness: result.readiness, confidence: result.confidence, risk: result.risk, decision: result.decision }));\""
+  }
+}

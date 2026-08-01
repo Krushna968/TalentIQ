@@ -1,0 +1,60 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 2283 >>
+stream
+BT /F1 22 Tf 80 760 Td (TalentIQ - Proof-to-Hire Passport) Tj ET
+BT /F1 11 Tf 80 737 Td (Hackathon product summary) Tj ET
+BT /F1 11 Tf 80 714 Td () Tj ET
+BT /F1 15 Tf 80 691 Td (USP) Tj ET
+BT /F1 11 Tf 80 668 Td (TalentIQ turns scattered work into a role-specific, explainable hiring brief:) Tj ET
+BT /F1 11 Tf 80 645 Td (what a candidate can do, why the evidence is credible, and what risk remains.) Tj ET
+BT /F1 11 Tf 80 622 Td () Tj ET
+BT /F1 15 Tf 80 599 Td (What makes it different) Tj ET
+BT /F1 11 Tf 80 576 Td (Instead of black-box scores or resume keywords, every competency is linked to) Tj ET
+BT /F1 11 Tf 80 553 Td (source evidence from code, hackathons, presentations, team delivery, and interviews.) Tj ET
+BT /F1 11 Tf 80 530 Td () Tj ET
+BT /F1 15 Tf 80 507 Td (Implemented vertical slice) Tj ET
+BT /F1 11 Tf 80 484 Td (- Protected recruiter route: /recruiter/passport) Tj ET
+BT /F1 11 Tf 80 461 Td (- Role readiness, evidence confidence, trust risk, and source inspection) Tj ET
+BT /F1 11 Tf 80 438 Td (- Competency proof graph and a next-best targeted interview action) Tj ET
+BT /F1 11 Tf 80 415 Td (- Recruiter-only APIs with organization access: GET /api/passports/featured) Tj ET
+BT /F1 11 Tf 80 392 Td (  and POST /api/passports/:candidateId/targeted-interview) Tj ET
+BT /F1 11 Tf 80 369 Td () Tj ET
+BT /F1 15 Tf 80 346 Td (Scale and business path) Tj ET
+BT /F1 11 Tf 80 323 Td (Use queued connector adapters for GitHub, hackathons, uploads, and interviews.) Tj ET
+BT /F1 11 Tf 80 300 Td (Keep immutable provenance, hashes, timestamps, consent, and scoring versions.) Tj ET
+BT /F1 11 Tf 80 277 Td (Sell first to organizers and campuses, then recruiter subscriptions and enterprise ATS.) Tj ET
+BT /F1 11 Tf 80 254 Td () Tj ET
+BT /F1 15 Tf 80 231 Td (Validation) Tj ET
+BT /F1 11 Tf 80 208 Td (Frontend production build passed. Backend typecheck passed. 32 backend tests passed,) Tj ET
+BT /F1 11 Tf 80 185 Td (including Passport authorization, response completeness, and interview queue contracts.) Tj ET
+BT /F1 11 Tf 80 162 Td () Tj ET
+BT /F1 10 Tf 80 139 Td (Important: evidence is seeded and clearly disclosed. Live provider verification requires) Tj ET
+BT /F1 10 Tf 80 116 Td (configured credentials, production data, and governance before real hiring use.) Tj ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+2646
+%%EOF

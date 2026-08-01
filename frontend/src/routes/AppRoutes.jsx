@@ -8,6 +8,7 @@ import LandingPage from '../screens/LandingPage.jsx';
 import ProductModule from '../screens/ProductModule.jsx';
 import RecruiterSearch from '../screens/RecruiterSearch.jsx';
 import TalentReport from '../screens/TalentReport.jsx';
+import PassportScreen from '../screens/PassportScreen.jsx';
 import { RequireAuth, RequireRole } from '../components/RouteGuards.jsx';
 import { ROUTES } from './paths.js';
 
@@ -28,6 +29,7 @@ export default function AppRoutes() {
       <Route path={ROUTES.RECRUITER_SEARCH} element={<RequireRole allowedRoles={['RECRUITER']}><RecruiterSearch /></RequireRole>} />
       <Route path={ROUTES.RECRUITER_PIPELINE} element={<RequireRole allowedRoles={['RECRUITER']}><ProductModule module={productModules.recruiterPipeline} /></RequireRole>} />
       <Route path={ROUTES.RECRUITER_COMPARE} element={<RequireRole allowedRoles={['RECRUITER']}><ProductModule module={productModules.recruiterCompare} /></RequireRole>} />
+      <Route path={ROUTES.RECRUITER_PASSPORT} element={<RequireRole allowedRoles={['RECRUITER']}><PassportScreen /></RequireRole>} />
 
       {/* Admin Protected Routes */}
       <Route path={ROUTES.TRUST} element={<RequireRole allowedRoles={['ADMIN']}><ProductModule module={productModules.trustFraud} /></RequireRole>} />

@@ -12,6 +12,7 @@ const linksByRole = {
     { label: 'Talent Search', to: ROUTES.RECRUITER_SEARCH },
     { label: 'Pipeline', to: ROUTES.RECRUITER_PIPELINE },
     { label: 'Compare', to: ROUTES.RECRUITER_COMPARE },
+    { label: 'Proof Passport', to: ROUTES.RECRUITER_PASSPORT },
   ],
 };
 

@@ -14,6 +14,7 @@ import trustRoutes from './trust.routes.js';
 import githubRoutes from './github.routes.js';
 import privacyRoutes from './privacy.routes.js';
 import healthRoutes from './health.routes.js';
+import passportRoutes from './passport.routes.js';
 
 const routes = Router();
 
@@ -23,6 +24,7 @@ routes.use('/privacy', privacyRoutes);
 routes.use('/candidates', candidateRoutes);
 routes.use('/candidates', githubRoutes);
 routes.use('/recruiters', recruiterRoutes);
+routes.use('/passports', passportRoutes);
 routes.use('/verification', verificationRoutes);
 routes.use('/matching', matchingRoutes);
 routes.use('/analytics', analyticsRoutes);

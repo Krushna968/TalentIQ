@@ -143,3 +143,8 @@ export const privacyApi = {
   deleteAccount: () => api.delete('/privacy/account'),
   getAuditLogs: () => api.get('/privacy/audit-logs'),
 };
+
+export const passportApi = {
+  getFeatured: () => api.get('/passports/featured'),
+  queueTargetedInterview: (candidateId) => api.post(`/passports/${candidateId}/targeted-interview`),
+};
