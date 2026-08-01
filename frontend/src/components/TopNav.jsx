@@ -10,6 +10,7 @@ const linksByRole = {
   ],
   recruiter: [
     { label: 'Talent Search', to: ROUTES.RECRUITER_SEARCH },
+    { label: 'Requisitions', to: ROUTES.RECRUITER_JOBS },
     { label: 'Pipeline', to: ROUTES.RECRUITER_PIPELINE },
     { label: 'Compare', to: ROUTES.RECRUITER_COMPARE },
   ],

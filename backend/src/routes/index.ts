@@ -13,6 +13,9 @@ import hackathonRoutes from './hackathon.routes.js';
 import trustRoutes from './trust.routes.js';
 import githubRoutes from './github.routes.js';
 import evidenceRoutes from './evidence.routes.js';
+import organizationRoutes from './organization.routes.js';
+import jobRoutes from './job.routes.js';
+import pipelineRoutes from './pipeline.routes.js';
 
 const routes = Router();
 
@@ -21,6 +24,10 @@ routes.use('/candidates', candidateRoutes);
 routes.use('/candidates', githubRoutes);
 routes.use('/candidates/:candidateId/evidence', evidenceRoutes);
 routes.use('/recruiters', recruiterRoutes);
+// Owner 3 — recruiter operations
+routes.use('/orgs', organizationRoutes);
+routes.use('/jobs', jobRoutes);
+routes.use('/pipeline', pipelineRoutes);
 routes.use('/verification', verificationRoutes);
 routes.use('/matching', matchingRoutes);
 routes.use('/analytics', analyticsRoutes);

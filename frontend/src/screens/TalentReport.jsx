@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import TopNav from '../components/TopNav.jsx';
 import SpaceFabric from '../components/SpaceFabric.jsx';
+import { ROUTES } from '../routes/paths.js';
 
 const statusStyles = {
   hired: { color: '#92f1b1', label: 'Hired' },
@@ -35,7 +36,7 @@ export default function TalentReport() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { candidates, setCandidateStatus } = useApp();
+  const { candidates } = useApp();
   const candidateId = location.state?.candidateId || id;
   const candidate = candidates.find((item) => item.id === candidateId) || candidates.find((item) => item.id === id);
   const returnTo = location.state?.returnTo || '/recruiter';
@@ -94,9 +95,12 @@ export default function TalentReport() {
 
       <footer className="decision-bar">
         <div className="decision-bar-inner">
-          <button className="button button-danger" onClick={() => setCandidateStatus(candidate.id, 'rejected')}>Reject</button>
-          <button className="button button-ghost" onClick={() => setCandidateStatus(candidate.id, 'hold')}>Hold</button>
-          <button className="button button-primary" onClick={() => setCandidateStatus(candidate.id, 'hired')}><span className="material-symbols-outlined" style={{ fontSize: 17 }}>handshake</span>Hire candidate</button>
+          {/* Hire/Hold/Reject are recorded per-requisition on the pipeline board, where
+              the decision is persisted with a reason, actor, and immutable timeline. */}
+          <span style={{ color: '#8aa0b6', fontSize: 13 }}>Decisions are recorded on the hiring pipeline.</span>
+          <Link className="button button-primary" to={ROUTES.RECRUITER_PIPELINE}>
+            <span className="material-symbols-outlined" style={{ fontSize: 17 }}>view_kanban</span>Manage in pipeline
+          </Link>
         </div>
       </footer>
     </div>

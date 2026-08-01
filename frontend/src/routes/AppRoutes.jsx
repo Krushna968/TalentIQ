@@ -7,6 +7,8 @@ import AIInterview from '../screens/AIInterview.jsx';
 import LandingPage from '../screens/LandingPage.jsx';
 import ProductModule from '../screens/ProductModule.jsx';
 import RecruiterSearch from '../screens/RecruiterSearch.jsx';
+import RecruiterPipeline from '../screens/RecruiterPipeline.jsx';
+import RecruiterRequisitions from '../screens/RecruiterRequisitions.jsx';
 import TalentReport from '../screens/TalentReport.jsx';
 import { ROUTES } from './paths.js';
 
@@ -22,7 +24,8 @@ export default function AppRoutes() {
     {moduleRoute(ROUTES.CANDIDATE_RESUME, productModules.resumeBuilder)}
     {moduleRoute(ROUTES.CANDIDATE_JOBS, productModules.jobRecommendations)}
     <Route path={ROUTES.RECRUITER_SEARCH} element={<RecruiterSearch />} />
-    {moduleRoute(ROUTES.RECRUITER_PIPELINE, productModules.recruiterPipeline)}
+    <Route path={ROUTES.RECRUITER_JOBS} element={<RecruiterRequisitions />} />
+    <Route path={ROUTES.RECRUITER_PIPELINE} element={<RecruiterPipeline />} />
     {moduleRoute(ROUTES.RECRUITER_COMPARE, productModules.recruiterCompare)}
     {moduleRoute(ROUTES.VERIFICATION, productModules.verification)}
     {moduleRoute(ROUTES.MATCHING, productModules.matching)}

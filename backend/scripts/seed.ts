@@ -1,14 +1,7 @@
 import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
-import { PrismaClient } from "../generated/prisma/client";
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || "postgresql://postgres@localhost:5432/talentiq",
-});
-
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+// Reuse the shared adapter-selecting client so `npm run seed` works against
+// SQLite (local dev) or PostgreSQL (prod) without duplicating bootstrap logic.
+import { prisma } from "../src/lib/prisma.js";
 
 const candidates = [
   {
@@ -127,8 +120,68 @@ const seed = async () => {
   }
 
   console.log(`Seeded ${candidates.length} candidates`);
+
+  // --- Owner 3: recruiter operations demo tenant ---------------------------
+  // Ids match the auth-stub defaults (DEMO_ORG_ID / DEMO_USER_ID) so local dev
+  // works with no headers. All upserts are idempotent.
+  const ORG_ID = "demo-org";
+  const USER_ID = "demo-user";
+  const JOB_ID = "demo-job";
+  const DEFAULT_STAGES = [
+    { name: "Discovered", order: 0, isTerminal: false },
+    { name: "Screened", order: 1, isTerminal: false },
+    { name: "Interviewing", order: 2, isTerminal: false },
+    { name: "Offered", order: 3, isTerminal: false },
+    { name: "Hired", order: 4, isTerminal: true },
+    { name: "Rejected", order: 5, isTerminal: true },
+  ];
+
+  await prisma.organization.upsert({
+    where: { id: ORG_ID },
+    create: { id: ORG_ID, name: "TalentIQ Demo Co", slug: "demo" },
+    update: {},
+  });
+  await prisma.membership.upsert({
+    where: { orgId_userId: { orgId: ORG_ID, userId: USER_ID } },
+    create: { orgId: ORG_ID, userId: USER_ID, email: "demo@talentiq.ai", name: "Demo Recruiter", role: "owner" },
+    update: {},
+  });
+  await prisma.job.upsert({
+    where: { id: JOB_ID },
+    create: {
+      id: JOB_ID, orgId: ORG_ID, title: "Senior Backend Engineer",
+      department: "Engineering", location: "Remote", employmentType: "full_time",
+      status: "open", visibility: "org", createdById: USER_ID,
+    },
+    update: {},
+  });
+  await prisma.jobCollaborator.upsert({
+    where: { jobId_userId: { jobId: JOB_ID, userId: USER_ID } },
+    create: { jobId: JOB_ID, userId: USER_ID, role: "owner" },
+    update: {},
+  });
+  if ((await prisma.pipelineStage.count({ where: { jobId: JOB_ID } })) === 0) {
+    await prisma.pipelineStage.createMany({ data: DEFAULT_STAGES.map((s) => ({ ...s, jobId: JOB_ID })) });
+  }
+  const firstStage = await prisma.pipelineStage.findFirst({ where: { jobId: JOB_ID }, orderBy: { order: "asc" } });
+  if (firstStage) {
+    for (const candidateId of ["elena-rodriguez", "david-chen"]) {
+      const existing = await prisma.pipelineEntry.findUnique({
+        where: { jobId_candidateId: { jobId: JOB_ID, candidateId } },
+      });
+      if (!existing) {
+        const entry = await prisma.pipelineEntry.create({
+          data: { jobId: JOB_ID, candidateId, currentStageId: firstStage.id, addedById: USER_ID },
+        });
+        await prisma.pipelineEvent.create({
+          data: { entryId: entry.id, type: "added", toStageId: firstStage.id, actorId: USER_ID, actorName: "Demo Recruiter" },
+        });
+      }
+    }
+  }
+  console.log("Seeded demo org, requisition, stages, and pipeline entries");
+
   await prisma.$disconnect();
-  await pool.end();
 };
 
 seed().catch((err) => {

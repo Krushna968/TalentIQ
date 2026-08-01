@@ -14,13 +14,19 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:generate": "prisma generate",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate",
+    "sqlite:schema": "node scripts/gen-sqlite-schema.mjs",
+    "db:dev:generate": "npm run sqlite:schema && prisma generate --schema prisma/schema.sqlite.prisma",
+    "db:dev:push": "npm run sqlite:schema && prisma db push --schema prisma/schema.sqlite.prisma",
+    "db:dev:setup": "npm run db:dev:generate && npm run db:dev:push && npm run seed",
+    "postinstall": "prisma generate --schema prisma/schema.prisma",
     "db:setup": "prisma migrate deploy && tsx scripts/seed.ts"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.2.2",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   },

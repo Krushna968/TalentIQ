@@ -1,31 +1,27 @@
-import { Request, Response } from 'express';
-import { candidates } from '../data/demo.js';
+import { asyncHandler } from '../lib/http.js';
+import { prisma } from '../lib/prisma.js';
 
-export const searchCandidates = async (req: Request, res: Response) => {
-  const { q, minScore, specialism } = req.query;
-  let results = [...candidates];
-  if (q) results = results.filter(c => c.name.toLowerCase().includes((q as string).toLowerCase()) || c.skills.some(s => s.toLowerCase().includes((q as string).toLowerCase())));
-  if (minScore) results = results.filter(c => c.talentScore >= Number(minScore));
-  if (specialism) results = results.filter(c => c.skills.some(s => s.toLowerCase().includes((specialism as string).toLowerCase())));
-  res.json({ candidates: results, total: results.length });
-};
+// NOTE: Full production talent search (transparent filters, sorting, pagination,
+// shareable query URLs) is Owner 3 work item #2. This is a minimal DB-backed
+// placeholder that removes the old in-memory demo dependency; the pipeline
+// endpoints that used to live here now live under /api/jobs and /api/pipeline.
+export const searchCandidates = asyncHandler(async (req, res) => {
+  const q = ((req.query.q as string) || '').trim();
+  const minScore = req.query.minScore ? Number(req.query.minScore) : undefined;
+  const candidates = await prisma.candidate.findMany({
+    where: {
+      ...(minScore ? { talentScore: { gte: minScore } } : {}),
+      ...(q ? { OR: [{ name: { contains: q } }, { title: { contains: q } }] } : {}),
+    },
+    orderBy: { talentScore: 'desc' },
+    take: 50,
+  });
+  res.json({ candidates, total: candidates.length });
+});
 
-export const getPipeline = async (_req: Request, res: Response) => {
-  res.json({ stages: [
-    { name: 'Discovered', count: 12, candidates: candidates.slice(0, 2) },
-    { name: 'Screened', count: 8, candidates: candidates.slice(2, 4) },
-    { name: 'Interviewing', count: 3, candidates: candidates.slice(4) },
-    { name: 'Offered', count: 1, candidates: [] },
-    { name: 'Hired', count: 0, candidates: [] },
-  ]});
-};
-
-export const updatePipelineStatus = async (req: Request, res: Response) => {
-  res.json({ candidateId: req.params.candidateId, status: req.body.status, updatedAt: new Date() });
-};
-
-export const compareCandidates = async (req: Request, res: Response) => {
-  const ids = req.body.ids || [];
-  const selected = candidates.filter(c => ids.includes(c.id));
-  res.json({ candidates: selected.length ? selected : candidates.slice(0, 3), comparison: { columns: ['talentScore', 'githubScore', 'hackathonScore', 'certScore'] } });
-};
+// NOTE: Full compare workspace + dossier review is Owner 3 work item #4.
+export const compareCandidates = asyncHandler(async (req, res) => {
+  const ids: string[] = req.body?.ids || [];
+  const candidates = await prisma.candidate.findMany({ where: { id: { in: ids } } });
+  res.json({ candidates, comparison: { columns: ['talentScore', 'githubScore', 'hackathonScore', 'certScore'] } });
+});

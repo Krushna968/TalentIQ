@@ -5,7 +5,12 @@ export interface AuthenticatedRequest extends Request {
     id: string;
     email: string;
     role: 'candidate' | 'recruiter' | 'admin';
+    // Tenant the request is acting within. Populated by the auth middleware.
+    // Owner 1's real JWT auth must fill this same shape so the seam is drop-in.
+    orgId: string;
   };
+  // Set by requireOrg once membership in `user.orgId` is verified against the DB.
+  orgRole?: 'owner' | 'admin' | 'recruiter' | 'viewer';
 }
 
 export interface PaginationParams {

@@ -34,6 +34,7 @@ model Candidate {
   githubConnection GithubConnection?
   linkedInConnection LinkedInConnection?
   evidence        Evidence[]
+  pipelineEntries PipelineEntry[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -192,4 +193,170 @@ model GithubLanguageSummary {
   repoCount          Int
 
   @@unique([githubConnectionId, language])
+}
+
+// ---------------------------------------------------------------------------
+// Owner 3 — Recruiter Operations domain
+// Multi-tenant recruiter workspace: organizations, requisitions, permissions,
+// a persisted hiring pipeline, an immutable decision timeline, and audit trail.
+// Enum-like fields use String to match the existing convention (e.g. Evidence.status).
+// ---------------------------------------------------------------------------
+
+// Tenant root. Every recruiter record hangs off exactly one Organization and
+// all queries are scoped by orgId (see src/lib/tenant.ts).
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+
+  members   Membership[]
+  jobs      Job[]
+  auditLogs AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Org/team membership + recruiter role. userId references the identity owned by
+// Owner 1's auth system; email/name are display snapshots (provisional).
+model Membership {
+  id     String @id @default(cuid())
+  orgId  String
+  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  userId String
+  email  String?
+  name   String?
+  role   String @default("recruiter") // owner | admin | recruiter | viewer
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, userId])
+  @@index([orgId, role])
+}
+
+// A job requisition. Field ownership is provisional pending Owner 2's job domain;
+// kept isolated behind job.service.ts so it can be reconciled without churn.
+model Job {
+  id             String  @id @default(cuid())
+  orgId          String
+  org            Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  title          String
+  description    String?
+  department     String?
+  location       String?
+  employmentType String? // full_time | part_time | contract | intern
+  status         String  @default("draft")     // draft | open | closed
+  visibility     String  @default("org")        // org | assigned
+  createdById    String
+  closedAt       DateTime?
+
+  collaborators JobCollaborator[]
+  stages        PipelineStage[]
+  entries       PipelineEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orgId, status])
+}
+
+// Recruiter-to-job permission grant.
+model JobCollaborator {
+  id     String @id @default(cuid())
+  jobId  String
+  job    Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  userId String
+  role   String @default("viewer") // owner | editor | viewer
+
+  createdAt DateTime @default(now())
+
+  @@unique([jobId, userId])
+  @@index([userId])
+}
+
+// A configurable pipeline stage belonging to a job. Terminal stages (Hired /
+// Rejected) cannot be moved out of without an explicit reopen.
+model PipelineStage {
+  id         String @id @default(cuid())
+  jobId      String
+  job        Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  name       String
+  order      Int
+  isTerminal Boolean @default(false)
+
+  entries    PipelineEntry[]
+
+  createdAt DateTime @default(now())
+
+  @@index([jobId, order])
+}
+
+// A candidate placed into a job's pipeline. Replaces the old in-memory
+// AppContext status. updatedAt drives optimistic-concurrency checks.
+model PipelineEntry {
+  id               String @id @default(cuid())
+  jobId            String
+  job              Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateId      String
+  candidate        Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  currentStageId   String
+  currentStage     PipelineStage @relation(fields: [currentStageId], references: [id])
+
+  assignedToUserId String?
+  shortlisted      Boolean @default(false)
+  addedById        String
+
+  events           PipelineEvent[]
+
+  addedAt   DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([jobId, candidateId])
+  @@index([jobId, currentStageId])
+}
+
+// Append-only activity/decision timeline. The service layer never updates or
+// deletes these rows — they are the immutable record of who changed what, when.
+model PipelineEvent {
+  id          String @id @default(cuid())
+  entryId     String
+  entry       PipelineEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  type        String  // added | stage_change | decision | assignment | note
+  fromStageId String?
+  toStageId   String?
+  decision    String? // hire | hold | reject
+  reason      String?
+  body        String?
+  actorId     String
+  actorName   String?
+
+  createdAt DateTime @default(now())
+
+  @@index([entryId, createdAt])
+}
+
+// Tenant-scoped audit trail. Every mutating recruiter action writes one row.
+model AuditLog {
+  id         String @id @default(cuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  actorId    String
+  actorName  String?
+  action     String
+  targetType String
+  targetId   String
+  metadata   String? // JSON string
+
+  createdAt DateTime @default(now())
+
+  @@index([orgId, createdAt])
+  @@index([targetType, targetId])
 }
