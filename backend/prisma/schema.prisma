@@ -47,11 +47,39 @@ model Candidate {
   updatedAt       DateTime @updatedAt
 }
 
-enum Visibility { PRIVATE RECRUITERS PUBLIC }
-enum EvidenceStatus { DRAFT SUBMITTED UNDER_REVIEW VERIFIED REJECTED EXPIRED }
-enum VerificationDecision { VERIFIED REJECTED }
-enum ApplicationStatus { SAVED APPLIED SCREENING INTERVIEW OFFER REJECTED WITHDRAWN IGNORED }
-enum AttachmentScanStatus { PENDING CLEAN FAILED QUARANTINED }
+enum Visibility {
+  PRIVATE
+  RECRUITERS
+  PUBLIC
+}
+enum EvidenceStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+enum VerificationDecision {
+  VERIFIED
+  REJECTED
+}
+enum ApplicationStatus {
+  SAVED
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+  IGNORED
+}
+enum AttachmentScanStatus {
+  PENDING
+  CLEAN
+  FAILED
+  QUARANTINED
+}
 
 model CandidateProfile {
  id String @id @default(cuid())
@@ -371,7 +399,3 @@ model GithubLanguageSummary {
 
   @@unique([githubConnectionId, language])
 }
-
-
-
-
