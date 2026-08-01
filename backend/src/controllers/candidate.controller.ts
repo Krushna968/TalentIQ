@@ -1,48 +1,8 @@
-import { Request, Response } from 'express';
-import { candidates } from '../data/demo.js';
+import type { Response } from 'express'; import type { AuthenticatedRequest } from '../types/index.js'; import * as s from '../services/candidate.service.js';
+const id=(r:AuthenticatedRequest)=>String(r.query.id||r.user!.id);const send=(res:Response,e:unknown)=>res.status(e instanceof Error&&/not found/.test(e.message)?404:400).json({error:e instanceof Error?e.message:'Request failed'});
+export const getDashboard=async(r:AuthenticatedRequest,res:Response)=>{try{res.json(await s.dashboard(id(r)))}catch(e){send(res,e)}};export const getProfile=async(r:AuthenticatedRequest,res:Response)=>{try{res.json(await s.profile(id(r)))}catch(e){send(res,e)}};export const updateProfile=async(r:AuthenticatedRequest,res:Response)=>{try{res.json(await s.updateProfile(id(r),r.body,r.user!.id))}catch(e){send(res,e)}};
+export const getRoadmap=async(r:AuthenticatedRequest,res:Response)=>{try{res.json({items:await s.listRoadmap(id(r))})}catch(e){send(res,e)}};export const createRoadmap=async(r:AuthenticatedRequest,res:Response)=>{try{res.status(201).json({item:await s.createRoadmap(id(r),r.body)})}catch(e){send(res,e)}};export const updateRoadmap=async(r:AuthenticatedRequest,res:Response)=>{try{res.json({item:await s.updateRoadmap(id(r),r.params.roadmapId as string,r.body)})}catch(e){send(res,e)}};export const deleteRoadmap=async(r:AuthenticatedRequest,res:Response)=>{try{await s.deleteRoadmap(id(r),r.params.roadmapId as string);res.status(204).end()}catch(e){send(res,e)}};
+export const getResume=async(r:AuthenticatedRequest,res:Response)=>{try{res.json({resumes:await s.resumes(id(r)),templates:['modern','classic','minimal']})}catch(e){send(res,e)}};export const saveResume=async(r:AuthenticatedRequest,res:Response)=>{try{res.status(201).json({resume:await s.saveResume(id(r),r.body)})}catch(e){send(res,e)}};
+export const getJobRecommendations=async(r:AuthenticatedRequest,res:Response)=>{try{res.json(await s.jobs(id(r),r.query))}catch(e){send(res,e)}};export const applyToJob=async(r:AuthenticatedRequest,res:Response)=>{try{res.json({application:await s.setApplication(id(r),r.params.id as string,r.body.status||'APPLIED',r.body.notes)})}catch(e){send(res,e)}};
 
-export const getDashboard = async (_req: Request, res: Response) => {
-  res.json({ candidates, total: candidates.length, stats: { avgScore: Math.round(candidates.reduce((a, c) => a + c.talentScore, 0) / candidates.length) } });
-};
-
-export const getProfile = async (req: Request, res: Response) => {
-  const c = candidates.find(c => c.id === req.query.id);
-  res.json(c || candidates[0]);
-};
-
-export const updateProfile = async (req: Request, res: Response) => {
-  res.json({ ...candidates[0], ...req.body });
-};
-
-export const getRoadmap = async (_req: Request, res: Response) => {
-  res.json({ steps: [
-    { name: 'Core Skills', detail: 'Master primary stack', done: true },
-    { name: 'Advanced Topics', detail: 'Deep dive into system design', done: true },
-    { name: 'Specialization', detail: 'Choose a focus area', done: false },
-    { name: 'Leadership', detail: 'Lead projects and mentor', done: false },
-  ]});
-};
-
-export const updateRoadmap = async (req: Request, res: Response) => {
-  res.json({ message: 'Roadmap updated', ...req.body });
-};
-
-export const getResume = async (_req: Request, res: Response) => {
-  res.json({ candidate: candidates[0], templates: ['modern', 'classic', 'minimal'] });
-};
-
-export const generateResume = async (req: Request, res: Response) => {
-  res.json({ url: '/resumes/demo-resume.pdf', format: req.body.format || 'pdf' });
-};
-
-export const getJobRecommendations = async (_req: Request, res: Response) => {
-  res.json({ jobs: [
-    { id: 'j1', title: 'Senior Full-Stack Engineer', company: 'TechCorp', matchScore: 94 },
-    { id: 'j2', title: 'Frontend Architect', company: 'StartupXYZ', matchScore: 88 },
-    { id: 'j3', title: 'Node.js Backend Lead', company: 'ScaleUp Inc', matchScore: 82 },
-  ]});
-};
-
-export const applyToJob = async (req: Request, res: Response) => {
-  res.json({ message: `Applied to job ${req.params.id}` });
-};
+export const generateResume=async(r:AuthenticatedRequest,res:Response)=>{try{const ai=await import('../services/ai.service.js');res.json({draft:await ai.createResumeDraft(r.body)})}catch(e){send(res,e)}};

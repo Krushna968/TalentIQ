@@ -13,6 +13,9 @@ import hackathonRoutes from './hackathon.routes.js';
 import trustRoutes from './trust.routes.js';
 import githubRoutes from './github.routes.js';
 import evidenceRoutes from './evidence.routes.js';
+import operationsRoutes from './operations.routes.js';
+import notificationRoutes from './notification.routes.js';
+import aiRoutes from './ai.routes.js';
 
 const routes = Router();
 
@@ -20,6 +23,10 @@ routes.use('/auth', authRoutes);
 routes.use('/candidates', candidateRoutes);
 routes.use('/candidates', githubRoutes);
 routes.use('/candidates/:candidateId/evidence', evidenceRoutes);
+routes.use('/evidence', evidenceRoutes);
+routes.use('/operations', operationsRoutes);
+routes.use('/notifications', notificationRoutes);
+routes.use('/ai', aiRoutes);
 routes.use('/recruiters', recruiterRoutes);
 routes.use('/verification', verificationRoutes);
 routes.use('/matching', matchingRoutes);

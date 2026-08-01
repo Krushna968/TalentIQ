@@ -1,12 +1,11 @@
-import { Request, Response } from 'express';
+import { type Request, type Response } from 'express';
+import { analyzePresentationWithAi, AiServiceError } from '../services/ai.service.js';
 
 export const analyzePresentation = async (req: Request, res: Response) => {
-  res.json({ scores: { clarity: 82, feasibility: 78, innovation: 90, quality: 85, overall: 84 }, feedback: 'Strong presentation with clear problem framing. Consider adding more technical depth.' });
+  const { title, content, audience } = req.body as { title?: string; content?: string; audience?: string };
+  if (!content?.trim()) return res.status(400).json({ error: 'Presentation content is required' });
+  try { res.json(await analyzePresentationWithAi({ title, content, audience })); }
+  catch (error) { const value = error as AiServiceError; res.status(value.status || 500).json({ error: value.message || 'Presentation analysis failed' }); }
 };
 
-export const getPresentationHistory = async (req: Request, res: Response) => {
-  res.json({ userId: req.params.userId, presentations: [
-    { title: 'Scaling Microservices at Edge', event: 'KubeCon 2023', score: 88, date: new Date() },
-    { title: 'ML Pipelines in Production', event: 'PyCon 2023', score: 82, date: new Date() },
-  ]});
-};
+export const getPresentationHistory = async (req: Request, res: Response) => res.json({ userId: req.params.userId, presentations: [] });

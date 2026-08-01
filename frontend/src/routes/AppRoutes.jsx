@@ -1,9 +1,10 @@
-﻿import React from 'react';
+import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { productModules } from '../config/productModules.js';
 import AuthScreen from '../screens/AuthScreen.jsx';
 import CandidateDashboard from '../screens/CandidateDashboard.jsx';
 import AIInterview from '../screens/AIInterview.jsx';
+import AiCareerStudio from '../screens/AiCareerStudio.jsx';
 import LandingPage from '../screens/LandingPage.jsx';
 import ProductModule from '../screens/ProductModule.jsx';
 import RecruiterSearch from '../screens/RecruiterSearch.jsx';
@@ -18,8 +19,8 @@ export default function AppRoutes() {
     <Route path={ROUTES.AUTH} element={<AuthScreen />} />
     <Route path={ROUTES.CANDIDATE_OVERVIEW} element={<CandidateDashboard />} />
     {moduleRoute(ROUTES.CANDIDATE_PROFILE, productModules.candidateProfile)}
-    {moduleRoute(ROUTES.CANDIDATE_ROADMAP, productModules.candidateRoadmap)}
-    {moduleRoute(ROUTES.CANDIDATE_RESUME, productModules.resumeBuilder)}
+    <Route path={ROUTES.CANDIDATE_ROADMAP} element={<AiCareerStudio mode="roadmap" />} />
+    <Route path={ROUTES.CANDIDATE_RESUME} element={<AiCareerStudio mode="resume" />} />
     {moduleRoute(ROUTES.CANDIDATE_JOBS, productModules.jobRecommendations)}
     <Route path={ROUTES.RECRUITER_SEARCH} element={<RecruiterSearch />} />
     {moduleRoute(ROUTES.RECRUITER_PIPELINE, productModules.recruiterPipeline)}

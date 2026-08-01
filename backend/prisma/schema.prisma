@@ -34,11 +34,144 @@ model Candidate {
   githubConnection GithubConnection?
   linkedInConnection LinkedInConnection?
   evidence        Evidence[]
+  profile CandidateProfile?
+  roadmapItems RoadmapItem[]
+  resumes Resume[]
+  applications JobApplication[]
+  attachments Attachment[]
+  auditLogs AuditLog[]
+  badges Badge[]
+  verificationRuns VerificationRun[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
 
+enum Visibility {
+  PRIVATE
+  RECRUITERS
+  PUBLIC
+}
+enum EvidenceStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+enum VerificationDecision {
+  VERIFIED
+  REJECTED
+}
+enum ApplicationStatus {
+  SAVED
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+  IGNORED
+}
+enum AttachmentScanStatus {
+  PENDING
+  CLEAN
+  FAILED
+  QUARANTINED
+}
+
+model CandidateProfile {
+ id String @id @default(cuid())
+ candidateId String @unique
+ candidate Candidate @relation(fields:[candidateId], references:[id], onDelete:Cascade)
+ headline String?
+ phone String?
+ website String?
+ visibility Visibility @default(RECRUITERS)
+ publishedAt DateTime?
+ draftJson String?
+ projectsJson String?
+ credentialsJson String?
+ workHistoryJson String?
+ links CandidateLink[]
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+}
+model CandidateLink {
+ id String @id @default(cuid())
+ profileId String
+ profile CandidateProfile @relation(fields:[profileId], references:[id], onDelete:Cascade)
+ label String
+ url String
+ provider String?
+ isPublic Boolean @default(true)
+ syncStatus String @default("manual")
+ lastSyncedAt DateTime?
+ @@unique([profileId,url])
+}
+model RoadmapItem {
+ id String @id @default(cuid())
+ candidateId String
+ candidate Candidate @relation(fields:[candidateId], references:[id], onDelete:Cascade)
+ title String
+ description String?
+ dueAt DateTime?
+ completedAt DateTime?
+ position Int @default(0)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([candidateId,position])
+}
+model Resume {
+ id String @id @default(cuid())
+ candidateId String
+ candidate Candidate @relation(fields:[candidateId], references:[id], onDelete:Cascade)
+ name String
+ template String @default("modern")
+ activeVersionId String?
+ versions ResumeVersion[]
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([candidateId,updatedAt])
+}
+model ResumeVersion {
+ id String @id @default(cuid())
+ resumeId String
+ resume Resume @relation(fields:[resumeId], references:[id], onDelete:Cascade)
+ version Int
+ contentJson String
+ attachmentId String?
+ createdAt DateTime @default(now())
+ @@unique([resumeId,version])
+}
+model Job {
+ id String @id @default(cuid())
+ title String
+ company String
+ location String?
+ description String?
+ applyUrl String?
+ isActive Boolean @default(true)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ applications JobApplication[]
+ @@index([isActive,createdAt])
+}
+model JobApplication {
+ id String @id @default(cuid())
+ candidateId String
+ jobId String
+ candidate Candidate @relation(fields:[candidateId], references:[id], onDelete:Cascade)
+ job Job @relation(fields:[jobId], references:[id], onDelete:Cascade)
+ status ApplicationStatus @default(SAVED)
+ notes String?
+ historyJson String @default("[]")
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@unique([candidateId,jobId])
+ @@index([candidateId,status,updatedAt])
+}
 model Evidence {
   id              String    @id @default(cuid())
   candidateId     String
@@ -53,9 +186,16 @@ model Evidence {
   issuedAt        DateTime?
   submittedAt     DateTime  @default(now())
   verifiedAt      DateTime?
-  status          String    @default("pending")
+  status          EvidenceStatus @default(DRAFT)
   score           Float?
   metadata        String?
+  description String?
+  visibility Visibility @default(PRIVATE)
+  expiresAt DateTime?
+  submittedBy String?
+  reviews EvidenceReview[]
+  attachments Attachment[]
+  verificationRuns VerificationRun[]
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -64,6 +204,72 @@ model Evidence {
   @@index([source, status])
 }
 
+model EvidenceReview {
+ id String @id @default(cuid())
+ evidenceId String
+ evidence Evidence @relation(fields:[evidenceId], references:[id], onDelete:Cascade)
+ reviewerId String
+ reviewerName String?
+ decision VerificationDecision
+ reason String?
+ score Float?
+ createdAt DateTime @default(now())
+ @@index([evidenceId,createdAt])
+ @@index([reviewerId,createdAt])
+}
+model VerificationRun {
+ id String @id @default(cuid())
+ candidateId String
+ evidenceId String?
+ candidate Candidate @relation(fields:[candidateId], references:[id], onDelete:Cascade)
+ evidence Evidence? @relation(fields:[evidenceId], references:[id], onDelete:SetNull)
+ source String
+ status String @default("queued")
+ requestedAt DateTime @default(now())
+ completedAt DateTime?
+ detail String?
+ @@index([candidateId,status])
+}
+model Attachment {
+ id String @id @default(cuid())
+ candidateId String
+ evidenceId String?
+ candidate Candidate @relation(fields:[candidateId], references:[id], onDelete:Cascade)
+ evidence Evidence? @relation(fields:[evidenceId], references:[id], onDelete:SetNull)
+ storageKey String @unique
+ originalName String
+ contentType String
+ sizeBytes Int
+ scanStatus AttachmentScanStatus @default(PENDING)
+ scanDetail String?
+ uploadedAt DateTime?
+ createdAt DateTime @default(now())
+ @@index([candidateId,createdAt])
+ @@index([evidenceId])
+}
+model Badge {
+ id String @id @default(cuid())
+ candidateId String
+ candidate Candidate @relation(fields:[candidateId], references:[id], onDelete:Cascade)
+ label String
+ description String?
+ awardedAt DateTime @default(now())
+ expiresAt DateTime?
+ @@index([candidateId,awardedAt])
+}
+model AuditLog {
+ id String @id @default(cuid())
+ candidateId String?
+ candidate Candidate? @relation(fields:[candidateId], references:[id], onDelete:SetNull)
+ actorId String
+ action String
+ entityType String
+ entityId String
+ detail String?
+ createdAt DateTime @default(now())
+ @@index([candidateId,createdAt])
+ @@index([entityType,entityId,createdAt])
+}
 model LinkedInConnection {
   id              String   @id @default(cuid())
   candidateId     String   @unique
@@ -192,4 +398,63 @@ model GithubLanguageSummary {
   repoCount          Int
 
   @@unique([githubConnectionId, language])
+}
+
+enum BackgroundJobStatus {
+  QUEUED
+  ACTIVE
+  COMPLETED
+  FAILED
+  DEAD_LETTER
+}
+
+model BackgroundJob {
+  id             String              @id @default(cuid())
+  name           String
+  candidateId    String?
+  idempotencyKey String              @unique
+  payload        String
+  status         BackgroundJobStatus @default(QUEUED)
+  attempts       Int                 @default(0)
+  maxAttempts    Int                 @default(5)
+  error          String?
+  queuedAt       DateTime            @default(now())
+  startedAt      DateTime?
+  completedAt    DateTime?
+  deadLetterAt   DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([name, status])
+  @@index([candidateId, createdAt])
+}
+
+model NotificationPreference {
+  id                String   @id @default(cuid())
+  candidateId       String   @unique
+  inAppEnabled      Boolean  @default(true)
+  emailEnabled      Boolean  @default(false)
+  webhookEnabled    Boolean  @default(false)
+  syncFailures      Boolean  @default(true)
+  evidenceDecisions Boolean  @default(true)
+  evidenceExpiry    Boolean  @default(true)
+  pipelineEvents    Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  candidateId String
+  category    String
+  channel     String   @default("in_app")
+  title       String
+  body        String
+  status      String   @default("queued")
+  deliveredAt DateTime?
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([candidateId, createdAt])
+  @@index([status, createdAt])
 }

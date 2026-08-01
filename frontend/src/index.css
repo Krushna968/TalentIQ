@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 @theme {
   --color-void: #05050a;
@@ -532,3 +532,105 @@ a { color: inherit; text-decoration: none; }
   .auth-form-side { padding: 24px 16px 48px; }
   .auth-form-content { padding: 30px 24px 25px; }
 }
+
+/* Dashboard integrations use explicit controls so every action remains visible on the dark canvas. */
+.btn { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(143, 241, 255, .5); border-radius: 10px; padding: 0 16px; color: #eafcff; background: rgba(9, 34, 47, .88); box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 7px 20px rgba(0,0,0,.2); font-size: 12px; font-weight: 750; line-height: 1; cursor: pointer; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+.btn:hover:not(:disabled) { transform: translateY(-1px); border-color: #8df7ff; box-shadow: 0 10px 24px rgba(0,229,255,.15), 0 0 0 2px rgba(0,229,255,.07); }
+.btn:focus-visible, .file-picker:focus-within { outline: 2px solid #ffd54f; outline-offset: 3px; }
+.btn:disabled { cursor: not-allowed; opacity: .52; }
+.btn-primary { border-color: rgba(122, 244, 255, .78); color: #031318; background: linear-gradient(110deg, #00d8ee, #6ff5ff); box-shadow: 0 9px 24px rgba(0,229,255,.2); }
+.btn-primary:hover:not(:disabled) { color: #031318; background: linear-gradient(110deg, #60f2ff, #b7fbff); }
+.btn-secondary { border-color: rgba(150, 182, 202, .52); color: #dceef5; background: rgba(24, 46, 61, .88); }
+.integration-panel { margin-top: 20px; padding: 26px; border-color: rgba(118, 229, 248, .3); background: linear-gradient(135deg, rgba(0,229,255,.055), rgba(255,255,255,.025)); }
+.integration-panel > h2 { margin: 8px 0; font-family: 'Space Grotesk', sans-serif; font-size: 24px; letter-spacing: -.035em; }
+.integration-copy { max-width: 520px; margin: 0 auto 20px; line-height: 1.6; }
+.integration-icon { display: grid; width: 52px; height: 52px; margin: 0 auto 12px; place-items: center; border: 1px solid rgba(121, 199, 255, .48); border-radius: 14px; color: #9ad7ff; background: rgba(84, 174, 255, .11); box-shadow: 0 0 22px rgba(84,174,255,.12); font-size: 28px; }
+.integration-avatar { width: 58px; height: 58px; margin: 10px auto; border: 2px solid rgba(121, 199, 255, .58); border-radius: 50%; object-fit: cover; }
+.linkedin-panel { text-align: center; }
+.integration-form { display: grid; gap: 12px; margin-top: 20px; }
+.integration-form label:not(.file-picker) { display: grid; gap: 7px; color: #c9d9e4; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.integration-form input:not([type='file']), .integration-form select, .integration-form textarea, .dashboard-layout form > input, .dashboard-layout form > select { width: 100%; box-sizing: border-box; min-height: 43px; border: 1px solid rgba(165, 215, 233, .34); border-radius: 9px; outline: none; color: #f2fbff; background: rgba(4, 18, 29, .8); padding: 10px 12px; }
+.integration-form input:focus, .integration-form select:focus, .integration-form textarea:focus, .dashboard-layout form > input:focus, .dashboard-layout form > select:focus { border-color: #00e5ff; box-shadow: 0 0 0 3px rgba(0,229,255,.1); }
+.file-picker { display: inline-flex; width: fit-content; cursor: pointer; }
+.file-picker input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+.file-picker-button { display: inline-flex; min-height: 42px; align-items: center; gap: 8px; border: 1px solid rgba(143, 241, 255, .5); border-radius: 10px; padding: 0 15px; color: #eafcff; background: rgba(9, 34, 47, .88); font-size: 12px; font-weight: 750; }
+.file-picker:hover .file-picker-button { border-color: #8df7ff; background: rgba(0,229,255,.11); }
+.file-picker-button .material-symbols-outlined { color: #73efff; font-size: 18px; }
+.file-status { display: flex; min-height: 21px; align-items: center; gap: 7px; color: #b5c7d4; font-size: 12px; }
+.file-status .material-symbols-outlined { color: #73efff; font-size: 17px; }
+.integration-message { margin: 14px 0 0; color: #baf8ff; font-size: 13px; }
+.resume-report { margin-top: 22px; border: 1px solid rgba(0,229,255,.24); border-radius: 14px; overflow: hidden; background: rgba(3, 18, 28, .58); }
+.resume-report-score { display: flex; justify-content: space-between; gap: 18px; align-items: center; padding: 18px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.resume-report-score strong { display: block; color: #7df7ff; font-family: 'Space Grotesk', sans-serif; font-size: 42px; line-height: .9; }
+.resume-report-score small { color: #9eb3c1; font-size: 14px; }
+.resume-report-score span { display: block; margin-top: 5px; color: #aabecd; font-size: 12px; }
+.resume-average-note { max-width: 245px; color: #d4eaf2; font-size: 12px; line-height: 1.5; }
+.resume-component-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 10px; padding: 16px; }
+.resume-component-grid article { padding: 12px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; background: rgba(255,255,255,.03); }
+.resume-component-grid article > div:first-child { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+.resume-component-grid article > div:first-child span { color: #7df7ff; font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
+.resume-component-grid .score-bar { margin-top: 10px; }
+.resume-component-grid p { min-height: 32px; margin: 9px 0 0; color: #9daebb; font-size: 11px; line-height: 1.45; }
+.resume-evidence { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 16px; color: #b2c5d2; font-size: 12px; }
+.resume-evidence span { border: 1px solid rgba(255,255,255,.09); border-radius: 99px; padding: 5px 9px; background: rgba(255,255,255,.025); }
+.resume-suggestions { margin: 0 16px 16px; padding: 14px; border: 1px solid rgba(255,213,79,.18); border-radius: 10px; background: rgba(255,184,0,.045); color: #e8f3f7; font-size: 12px; }
+.resume-suggestions ul { margin: 8px 0 0; padding-left: 18px; color: #c1d0da; line-height: 1.55; }
+.dashboard-score { display: grid; justify-items: center; gap: 5px; text-align: center; }
+.dashboard-score > span { max-width: 150px; color: #a9bdca; font-size: 10px; line-height: 1.35; }
+@media (max-width: 620px) { .integration-panel { padding: 20px; } .resume-report-score { align-items: start; flex-direction: column; } .resume-average-note { max-width: none; } }
+/* Career roadmap preview: a compact visual plan, not a static task list. */
+.roadmap-card { position: relative; overflow: hidden; padding: 22px; border-color: rgba(146, 122, 255, .34); background: linear-gradient(145deg, rgba(92, 51, 173, .19), rgba(10, 25, 44, .76) 56%, rgba(0,229,255,.06)); }
+.roadmap-card-glow { position: absolute; top: -100px; right: -70px; width: 210px; height: 210px; border: 1px solid rgba(165,132,255,.3); border-radius: 50%; box-shadow: 0 0 70px rgba(126,82,255,.22); pointer-events: none; }
+.roadmap-card-header { position: relative; z-index: 1; display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.roadmap-card-header .eyebrow { color: #c3a4ff; }
+.roadmap-card-header h2 { margin: 7px 0 0; font-family: 'Space Grotesk', sans-serif; font-size: 23px; letter-spacing: -.04em; }
+.roadmap-open-link { display: inline-flex; min-height: 31px; align-items: center; gap: 4px; border: 1px solid rgba(195,164,255,.52); border-radius: 8px; padding: 0 8px; color: #e9ddff; background: rgba(144,96,255,.12); font-size: 10px; font-weight: 700; white-space: nowrap; transition: .18s ease; }
+.roadmap-open-link:hover { border-color: #d6beff; color: #fff; background: rgba(144,96,255,.25); transform: translateY(-1px); }
+.roadmap-open-link .material-symbols-outlined { font-size: 15px; }
+.roadmap-lede { position: relative; z-index: 1; margin: 14px 0 16px; color: #bfc8dc; font-size: 12px; line-height: 1.55; }
+.roadmap-overview { position: relative; z-index: 1; margin-bottom: 18px; padding: 13px; border: 1px solid rgba(195,164,255,.2); border-radius: 12px; background: rgba(5,10,24,.38); }
+.roadmap-overview > div:first-child { display: flex; align-items: baseline; justify-content: space-between; }
+.roadmap-overview span, .roadmap-overview small { color: #a9b7cb; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+.roadmap-overview strong { color: #d5c2ff; font-family: 'Space Grotesk', sans-serif; font-size: 25px; line-height: 1; }
+.roadmap-progress-track { height: 7px; overflow: hidden; margin: 9px 0 7px; border-radius: 99px; background: rgba(255,255,255,.09); }
+.roadmap-progress-track i, .roadmap-mini-progress i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #a779ff, #6feeff); box-shadow: 0 0 14px rgba(154,112,255,.6); }
+.roadmap-overview small { display: block; color: #aeb9cb; letter-spacing: .02em; text-transform: none; }
+.roadmap-stages { position: relative; z-index: 1; display: grid; gap: 8px; }
+.roadmap-stage { display: grid; grid-template-columns: 36px 1fr; gap: 11px; padding: 10px; border: 1px solid rgba(255,255,255,.08); border-radius: 11px; background: rgba(1,9,20,.27); transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+.roadmap-stage:hover { transform: translateX(2px); border-color: rgba(165,132,255,.45); background: rgba(120,75,214,.1); }
+.roadmap-stage.active { border-color: rgba(111,238,255,.35); background: linear-gradient(90deg, rgba(0,229,255,.11), rgba(113,78,219,.12)); }
+.roadmap-stage-marker { display: grid; align-content: space-between; justify-items: center; min-height: 61px; border-radius: 9px; padding: 5px 0; color: #aab6c9; background: rgba(255,255,255,.045); font-family: 'IBM Plex Mono', monospace; font-size: 9px; }
+.roadmap-stage.active .roadmap-stage-marker { color: #bfffff; background: rgba(0,229,255,.13); }
+.roadmap-stage-marker .material-symbols-outlined { color: #c7a9ff; font-size: 17px; }
+.roadmap-stage-copy > div { display: flex; justify-content: space-between; gap: 8px; color: #a5b3c6; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: .04em; }
+.roadmap-stage-copy > div b { color: #d7c4ff; font-weight: 700; text-transform: uppercase; }
+.roadmap-stage.active .roadmap-stage-copy > div b { color: #8cfdff; }
+.roadmap-stage h3 { margin: 5px 0 3px; font-family: 'Space Grotesk', sans-serif; font-size: 14px; letter-spacing: -.02em; }
+.roadmap-stage p { margin: 0; color: #b3bfcd; font-size: 11px; line-height: 1.45; }
+.roadmap-stage small { display: flex; align-items: center; gap: 4px; margin-top: 7px; color: #91a5b8; font-size: 10px; }
+.roadmap-stage small .material-symbols-outlined { color: #77efff; font-size: 13px; }
+.roadmap-mini-progress { height: 4px; overflow: hidden; margin-top: 8px; border-radius: 99px; background: rgba(255,255,255,.1); }
+@media (max-width: 620px) { .roadmap-card-header { align-items: start; flex-direction: column; } .roadmap-open-link { width: 100%; justify-content: center; } }
+/* Verified commit evidence keeps source, SHA, and repository context visible. */
+.commit-evidence-panel { margin-top: 20px; border-color: rgba(0,229,255,.26); background: linear-gradient(145deg, rgba(0,229,255,.055), rgba(255,255,255,.028)); }
+.commit-evidence-panel .panel-heading { align-items: start; }
+.commit-intro { max-width: 630px; margin: 11px 0 18px; font-size: 13px; line-height: 1.55; }
+.commit-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 18px; }
+.commit-summary > div { padding: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: rgba(2,17,27,.44); }
+.commit-summary strong { display: block; color: #85f7ff; font-family: 'Space Grotesk', sans-serif; font-size: 22px; line-height: 1; }
+.commit-summary span { display: block; margin-top: 5px; color: #9eb2c0; font-size: 10px; line-height: 1.35; }
+.commit-evidence-list { display: grid; gap: 8px; }
+.commit-evidence-row { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 13px; border: 1px solid rgba(255,255,255,.085); border-radius: 10px; background: rgba(2,13,23,.35); transition: .18s ease; }
+.commit-evidence-row:hover { border-color: rgba(0,229,255,.36); background: rgba(0,229,255,.055); transform: translateX(2px); }
+.commit-evidence-row.latest { border-color: rgba(0,229,255,.3); }
+.commit-evidence-main { min-width: 0; }
+.commit-evidence-meta { display: flex; align-items: center; gap: 8px; }
+.commit-evidence-meta a { overflow: hidden; color: #91f5ff; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.commit-evidence-meta a:hover { color: #fff; text-decoration: underline; }
+.commit-evidence-meta span { border: 1px solid rgba(255,255,255,.12); border-radius: 5px; padding: 2px 5px; color: #a9bdca; font-family: 'IBM Plex Mono', monospace; font-size: 9px; }
+.commit-evidence-row h3 { overflow: hidden; margin: 5px 0 0; color: #e9f5f8; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.commit-evidence-row p { margin: 4px 0 0; color: #94a8b7; font-size: 11px; }
+.commit-evidence-row time { color: #b8c7d0; font-family: 'IBM Plex Mono', monospace; font-size: 10px; white-space: nowrap; }
+.empty-evidence { display: grid; justify-items: start; gap: 12px; }
+.empty-evidence .section-heading, .empty-evidence p { margin: 0; }
+@media (max-width: 620px) { .commit-summary { grid-template-columns: 1fr; } .commit-evidence-row { grid-template-columns: 12px 1fr; } .commit-evidence-row time { grid-column: 2; } }

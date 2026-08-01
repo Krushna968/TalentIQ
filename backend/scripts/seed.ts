@@ -13,8 +13,8 @@ const prisma = new PrismaClient({ adapter });
 const candidates = [
   {
     id: "aditi-rao",
-    name: "Aditi Rao",
-    email: "aditi@talentiq.ai",
+    name: "Krushna Rasal",
+    email: "krushna@talentiq.ai",
     title: "Full-Stack Engineer",
     role: "candidate",
     githubConnected: false,

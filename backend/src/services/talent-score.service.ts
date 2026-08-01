@@ -81,7 +81,7 @@ function averageEvidence(evidence: VerifiedEvidence[], source: string) {
 export async function calculateAndStoreTalentScore(candidateId: string) {
   const candidate = await prisma.candidate.findUnique({
     where: { id: candidateId },
-    include: { linkedInConnection: { select: { id: true } }, evidence: { where: { status: 'verified' }, select: { source: true, score: true, title: true } } },
+    include: { linkedInConnection: { select: { id: true } }, evidence: { where: { status: 'VERIFIED' as never }, select: { source: true, score: true, title: true } } },
   });
   if (!candidate) return null;
 

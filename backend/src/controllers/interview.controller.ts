@@ -1,33 +1,26 @@
-import { Request, Response } from 'express';
+import { type Request, type Response } from 'express';
+import { createInterviewQuestion, evaluateInterviewAnswer, AiServiceError } from '../services/ai.service.js';
 
-export const getQuestions = async (_req: Request, res: Response) => {
-  res.json({ questions: [
-    { id: 'q1', question: 'Design a rate-limiting system for a distributed API gateway.', category: 'System Design' },
-    { id: 'q2', question: 'Explain how you would implement a feature store for ML models.', category: 'ML Engineering' },
-    { id: 'q3', question: 'Walk through your approach to debugging a production outage.', category: 'Problem Solving' },
-    { id: 'q4', question: 'How would you optimize a slow GraphQL resolver chain?', category: 'Performance' },
-    { id: 'q5', question: 'Describe the trade-offs between microservices and monoliths.', category: 'Architecture' },
-  ]});
+const fail = (res: Response, error: unknown) => {
+  const value = error as AiServiceError;
+  res.status(value.status || 500).json({ error: value.message || 'Interview assistant failed' });
+};
+
+export const getQuestions = async (req: Request, res: Response) => {
+  try {
+    const skills = typeof req.query.skills === 'string' ? req.query.skills.split(',').map((item) => item.trim()).filter(Boolean) : [];
+    const question = await createInterviewQuestion({ role: typeof req.query.role === 'string' ? req.query.role : 'Software Engineer', skills });
+    res.json({ questions: [question] });
+  } catch (error) { fail(res, error); }
 };
 
 export const submitAnswer = async (req: Request, res: Response) => {
-  res.json({ score: Math.floor(Math.random() * 30) + 70, feedback: 'Strong answer. Consider discussing trade-offs more explicitly.', nextQuestion: 'q2' });
+  const { question, answer, role } = req.body as { question?: string; answer?: string; role?: string };
+  if (!question?.trim() || !answer?.trim()) return res.status(400).json({ error: 'question and answer are required' });
+  try { res.json(await evaluateInterviewAnswer({ question, answer, role })); }
+  catch (error) { fail(res, error); }
 };
 
-export const getSessions = async (_req: Request, res: Response) => {
-  res.json({ sessions: [
-    { id: 's1', type: 'technical', status: 'completed', score: 86, date: new Date() },
-    { id: 's2', type: 'behavioral', status: 'in_progress', score: null, date: new Date() },
-  ]});
-};
-
-export const getSession = async (req: Request, res: Response) => {
-  res.json({ id: req.params.id, type: 'technical', status: 'completed', questions: [
-    { id: 'q1', question: 'Design a rate-limiting system...', score: 88, feedback: 'Good system design approach.' },
-    { id: 'q2', question: 'Explain a feature store...', score: 84, feedback: 'Solid understanding.' },
-  ], overallScore: 86 });
-};
-
-export const getInterviewReport = async (req: Request, res: Response) => {
-  res.json({ sessionId: req.params.sessionId, scores: { technicalAccuracy: 85, communication: 78, problemSolving: 92, overall: 86 }, strengths: ['System design', 'Problem decomposition'], improvements: ['Communication clarity'] });
-};
+export const getSessions = async (_req: Request, res: Response) => res.json({ sessions: [] });
+export const getSession = async (req: Request, res: Response) => res.json({ id: req.params.id, status: 'not_persisted' });
+export const getInterviewReport = async (req: Request, res: Response) => res.json({ sessionId: req.params.sessionId, status: 'generated_client_side' });

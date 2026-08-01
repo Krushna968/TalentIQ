@@ -10,7 +10,7 @@ const roleContent = {
     description: 'Connect projects, credentials, interviews, and real proof of work so your skills can speak for themselves.',
     button: 'Enter candidate workspace',
     icon: UserRound,
-    email: 'aditi@dev.io',
+    email: 'krushna@dev.io',
   },
   recruiter: {
     label: 'For recruiters and hiring teams',

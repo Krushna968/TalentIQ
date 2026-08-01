@@ -1,7 +1,7 @@
 export const candidates = [
   {
-    id: 'aditi-rao', name: 'Aditi Rao', title: 'Full-Stack Engineer',
-    avatarColor: '#1a3a4a', initials: 'AR',
+    id: 'aditi-rao', name: 'Krushna Rasal', title: 'Full-Stack Engineer',
+    avatarColor: '#1a3a4a', initials: 'KR',
     skills: ['React', 'Node.js', 'TypeScript', 'GraphQL', 'AWS', 'Python'],
     talentScore: 87, githubScore: 91, hackathonScore: 82, certScore: 88,
     presentationScore: 76, openSourceScore: 84, socialScore: 71,

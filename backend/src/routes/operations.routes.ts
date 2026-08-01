@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { authenticate, authorize } from '../middleware/auth.middleware.js';
+import * as controller from '../controllers/operations.controller.js';
+const router = Router();
+router.use(authenticate, authorize('admin'));
+router.get('/queue/health', controller.health);
+router.get('/jobs', controller.listJobs);
+router.get('/jobs/metrics', controller.metrics);
+router.post('/jobs/:jobId/retry', controller.retryJob);
+export default router;
