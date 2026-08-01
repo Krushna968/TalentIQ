@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { 
+  Bot, Mic, PlayCircle, Send, BarChart2, 
+  Code, Lightbulb, HelpCircle, TrendingUp, Brain 
+} from 'lucide-react';
 import TopNav from '../components/TopNav.jsx';
+import './AIInterview.css';
 
 const SCRIPT = [
   {
@@ -32,19 +37,22 @@ const SCRIPT = [
 function ScoreBar({ label, value, color, icon }) {
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="material-symbols-outlined" style={{ color, fontSize: 16 }}>{icon}</span>
-          <span style={{ fontFamily: 'IBM Plex Sans', fontSize: 13, color: '#d2c5b0' }}>{label}</span>
+      <div className="score-bar-container">
+        <div className="score-bar-label">
+          {icon}
+          <span>{label}</span>
         </div>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 14, fontWeight: 600, color }}>{value}</span>
+        <span className="score-bar-value" style={{ color }}>{value}</span>
       </div>
-      <div style={{ width: '100%', height: 6, background: '#30353a', borderRadius: 9999, overflow: 'hidden' }}>
-        <div style={{
-          height: '100%', borderRadius: 9999, background: color,
-          width: `${value}%`, transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
-          boxShadow: `0 0 8px ${color}80`
-        }} />
+      <div className="score-bar-track">
+        <div 
+          className="score-bar-fill"
+          style={{
+            background: color,
+            width: `${value}%`,
+            boxShadow: `0 0 8px ${color}80`
+          }} 
+        />
       </div>
     </div>
   );
@@ -115,93 +123,82 @@ export default function AIInterview() {
   const totalScore = Math.round((scores.technical + scores.communication + scores.problemSolving) / 3);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f1418', color: '#dfe3e9', display: 'flex', flexDirection: 'column' }}>
+    <div className="interview-layout">
       <TopNav role="candidate" />
 
-      <main style={{ flex: 1, maxWidth: 1280, margin: '0 auto', width: '100%', padding: '40px 24px', display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
-
+      <main className="interview-main">
         {/* Chat panel */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+        <div className="chat-panel">
+          
           {/* Header */}
-          <div style={{ background: '#171D22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="chat-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(85,216,231,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                <span className="material-symbols-outlined" style={{ color: '#55d8e7', fontSize: 24, fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
-                <div style={{ position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: '50%', background: '#4caf50', border: '2px solid #171D22' }} />
+              <div className={`ai-avatar ${isTyping ? 'speaking' : ''}`}>
+                <Bot size={22} strokeWidth={1.5} />
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: '50%', background: '#4caf50', border: '2px solid #171D22' }} />
               </div>
               <div>
-                <div style={{ fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: 15, color: '#dfe3e9' }}>TalentIQ Interview Agent</div>
-                <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 600, color: '#55d8e7', letterSpacing: '0.1em', textTransform: 'uppercase' }}>AI · LIVE SESSION</div>
+                <div className="chat-header-title">TalentIQ Interview Agent</div>
+                <div className="chat-header-subtitle">AI · LIVE SESSION</div>
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: '#d2c5b0', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Progress</div>
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 14, fontWeight: 600, color: '#e8b84b' }}>{Math.min(step, SCRIPT.length)}/{SCRIPT.length}</div>
+              <div className="chat-header-subtitle" style={{ color: '#d2c5b0' }}>Progress</div>
+              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 14, fontWeight: 600, color: '#e8b84b' }}>
+                {Math.min(step, SCRIPT.length)}/{SCRIPT.length}
+              </div>
             </div>
           </div>
 
           {/* Messages area */}
-          <div ref={chatRef} style={{
-            flex: 1, background: '#0a0f13', border: '1px solid rgba(78,70,54,0.3)', borderRadius: 12,
-            padding: 20, minHeight: 400, maxHeight: 480, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16
-          }}>
+          <div className="chat-window" ref={chatRef}>
             {!started && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 20, textAlign: 'center', padding: 40 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 56, color: 'rgba(85,216,231,0.4)', fontVariationSettings: "'FILL' 1" }}>record_voice_over</span>
-                <h2 style={{ fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: 22, color: '#dfe3e9', margin: 0 }}>AI Technical Interview</h2>
-                <p style={{ fontFamily: 'IBM Plex Sans', fontSize: 14, color: '#d2c5b0', maxWidth: 380, lineHeight: 1.6 }}>
+              <div className="chat-start-screen">
+                <Mic size={56} color="rgba(85,216,231,0.4)" strokeWidth={1} />
+                <h2 style={{ fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: 22, color: '#dfe3e9', margin: 0 }}>
+                  AI Technical Interview
+                </h2>
+                <p style={{ fontFamily: 'IBM Plex Sans', fontSize: 14, color: '#d2c5b0', maxWidth: 380, lineHeight: 1.6, margin: 0 }}>
                   Answer 5 questions across system design, debugging, ML, leadership, and career growth. Your responses will be scored in real-time.
                 </p>
-                <button onClick={startInterview} style={{
-                  background: '#55d8e7', color: '#001f23', border: 'none', cursor: 'pointer',
-                  fontFamily: 'IBM Plex Sans', fontSize: 13, fontWeight: 600, letterSpacing: '0.05em',
-                  padding: '12px 32px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 8
-                }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18, fontVariationSettings: "'FILL' 1" }}>play_circle</span>
+                <button className="btn-start-interview" onClick={startInterview}>
+                  <PlayCircle size={18} />
                   Start Interview
                 </button>
               </div>
             )}
 
             {messages.map((msg, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+              <div key={i} className={`message-row ${msg.role}`}>
                 {msg.role === 'ai' && (
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(85,216,231,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 10, marginTop: 4 }}>
-                    <span className="material-symbols-outlined" style={{ color: '#55d8e7', fontSize: 16, fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
+                  <div className="ai-avatar">
+                    <Bot size={18} strokeWidth={1.5} />
                   </div>
                 )}
-                <div style={{
-                  maxWidth: '75%', padding: '12px 16px', borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-                  background: msg.role === 'user' ? 'rgba(232,184,75,0.12)' : (msg.final ? 'rgba(85,216,231,0.08)' : '#171D22'),
-                  border: `1px solid ${msg.role === 'user' ? 'rgba(232,184,75,0.25)' : (msg.final ? 'rgba(85,216,231,0.25)' : 'rgba(255,255,255,0.08)')}`,
-                  fontFamily: 'IBM Plex Sans', fontSize: 14, color: '#dfe3e9', lineHeight: 1.6
-                }}>
+                <div className={`message-bubble ${msg.role} ${msg.final ? 'final' : ''}`}>
                   {msg.text}
                 </div>
               </div>
             ))}
 
             {isTyping && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(85,216,231,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span className="material-symbols-outlined" style={{ color: '#55d8e7', fontSize: 16, fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
+              <div className="message-row ai">
+                <div className="ai-avatar speaking">
+                  <Bot size={18} strokeWidth={1.5} />
                 </div>
-                <div style={{ background: '#171D22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px 12px 12px 4px', padding: '12px 16px', display: 'flex', gap: 5 }}>
-                  {[0, 1, 2].map(i => (
-                    <div key={i} style={{
-                      width: 6, height: 6, borderRadius: '50%', background: '#55d8e7',
-                      animation: 'bounce 1.2s ease-in-out infinite',
-                      animationDelay: `${i * 0.2}s`
-                    }} />
-                  ))}
+                <div className="message-bubble ai typing-indicator">
+                  <div className="typing-dot" />
+                  <div className="typing-dot" />
+                  <div className="typing-dot" />
                 </div>
               </div>
             )}
           </div>
 
           {/* Input bar */}
-          <div style={{ background: '#171D22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="input-area">
             <textarea
+              className="chat-textarea"
               value={userInput}
               onChange={e => setUserInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -212,90 +209,73 @@ export default function AIInterview() {
                 : 'Type your answer (or click "Use Scripted Answer" below)…'
               }
               rows={3}
-              style={{
-                width: '100%', boxSizing: 'border-box',
-                background: '#0a0f13', border: '1px solid rgba(78,70,54,0.3)', borderRadius: 8,
-                padding: '10px 14px', fontFamily: 'IBM Plex Sans', fontSize: 14, color: '#dfe3e9',
-                outline: 'none', resize: 'none',
-                opacity: (!started || step >= SCRIPT.length) ? 0.5 : 1
-              }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button
+                className="btn-scripted"
                 onClick={useScriptedAnswer}
                 disabled={!started || isTyping || step >= SCRIPT.length}
-                style={{
-                  background: 'none', border: '1px dashed rgba(85,216,231,0.4)',
-                  borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-                  fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 600,
-                  color: '#55d8e7', letterSpacing: '0.08em', textTransform: 'uppercase',
-                  opacity: (!started || step >= SCRIPT.length) ? 0.4 : 1
-                }}
-              >Use Scripted Answer</button>
-              <button
-                onClick={sendMessage}
-                disabled={!started || isTyping || step >= SCRIPT.length}
-                style={{
-                  background: '#e8b84b', color: '#402d00', border: 'none', cursor: 'pointer',
-                  fontFamily: 'IBM Plex Sans', fontSize: 12, fontWeight: 600, letterSpacing: '0.05em',
-                  padding: '8px 24px', borderRadius: 9999, display: 'flex', alignItems: 'center', gap: 6,
-                  opacity: (!started || step >= SCRIPT.length || isTyping) ? 0.5 : 1, transition: 'background 0.2s'
-                }}
               >
-                Send <span className="material-symbols-outlined" style={{ fontSize: 16 }}>send</span>
+                Use Scripted Answer
+              </button>
+              <button
+                className="btn-send"
+                onClick={sendMessage}
+                disabled={!started || isTyping || step >= SCRIPT.length || !userInput.trim() && step < SCRIPT.length && !SCRIPT[step].answer}
+              >
+                Send <Send size={15} strokeWidth={2.5} />
               </button>
             </div>
           </div>
         </div>
 
         {/* Score sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="sidebar">
+          
           {/* Live scores card */}
-          <div style={{ background: '#171D22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-              <span className="material-symbols-outlined" style={{ color: '#55d8e7', fontSize: 18, fontVariationSettings: "'FILL' 1" }}>analytics</span>
-              <h2 style={{ fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: 16, color: '#dfe3e9', margin: 0 }}>Live Performance</h2>
-            </div>
+          <div className="sidebar-card">
+            <h2 className="sidebar-card-title">
+              <BarChart2 size={20} color="#55d8e7" />
+              Live Performance
+            </h2>
+            
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <ScoreBar label="Technical Accuracy" value={scores.technical} color="#55d8e7" icon="code" />
-              <ScoreBar label="Communication" value={scores.communication} color="#e8b84b" icon="record_voice_over" />
-              <ScoreBar label="Problem Solving" value={scores.problemSolving} color="#d7dcdd" icon="lightbulb" />
+              <ScoreBar label="Technical Accuracy" value={scores.technical} color="#55d8e7" icon={<Code size={16} color="#55d8e7" />} />
+              <ScoreBar label="Communication" value={scores.communication} color="#e8b84b" icon={<Mic size={16} color="#e8b84b" />} />
+              <ScoreBar label="Problem Solving" value={scores.problemSolving} color="#d7dcdd" icon={<Lightbulb size={16} color="#d7dcdd" />} />
             </div>
+            
             {/* Overall */}
-            <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: '#d2c5b0', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Overall Score</div>
-              <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 44, color: totalScore > 70 ? '#e8b84b' : totalScore > 40 ? '#55d8e7' : '#d2c5b0' }}>
+            <div className="overall-score-container">
+              <div className="overall-score-label">Overall Score</div>
+              <div 
+                className="overall-score-value"
+                style={{ color: totalScore > 70 ? '#e8b84b' : totalScore > 40 ? '#55d8e7' : '#d2c5b0' }}
+              >
                 {totalScore}
               </div>
             </div>
           </div>
 
           {/* Tips card */}
-          <div style={{ background: '#171D22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: 14, color: '#dfe3e9', marginBottom: 14, margin: '0 0 14px' }}>Interview Tips</h3>
+          <div className="sidebar-card">
+            <h3 className="sidebar-card-title" style={{ fontSize: 14, marginBottom: 16 }}>
+              Interview Tips
+            </h3>
             {[
-              { icon: 'tips_and_updates', tip: 'Be specific — cite real metrics and numbers' },
-              { icon: 'timeline', tip: 'Structure answers: Situation → Action → Result' },
-              { icon: 'psychology', tip: 'Show tradeoff reasoning, not just solutions' },
-            ].map(({ icon, tip }) => (
-              <div key={tip} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
-                <span className="material-symbols-outlined" style={{ color: '#e8b84b', fontSize: 16, flexShrink: 0, marginTop: 1 }}>{icon}</span>
-                <span style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, color: '#d2c5b0', lineHeight: 1.5 }}>{tip}</span>
+              { icon: <HelpCircle size={16} color="#e8b84b" />, tip: 'Be specific — cite real metrics and numbers' },
+              { icon: <TrendingUp size={16} color="#e8b84b" />, tip: 'Structure answers: Situation → Action → Result' },
+              { icon: <Brain size={16} color="#e8b84b" />, tip: 'Show tradeoff reasoning, not just solutions' },
+            ].map(({ icon, tip }, idx) => (
+              <div key={idx} className="tip-row">
+                {icon}
+                <span className="tip-text">{tip}</span>
               </div>
             ))}
           </div>
+
         </div>
       </main>
-
-      <style>{`
-        @keyframes bounce {
-          0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-          40% { transform: translateY(-6px); opacity: 1; }
-        }
-        @media (max-width: 768px) {
-          main { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </div>
   );
 }

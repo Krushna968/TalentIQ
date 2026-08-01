@@ -185,7 +185,7 @@ export async function syncCandidateFromGitHub(candidateId: string, token: string
     _count: { language: true },
   });
 
-  const totalAllBytes = langStats.reduce((a, b) => a + (b._sum.bytes || 0), 0);
+  const totalAllBytes = langStats.reduce((a: number, b: { _sum: { bytes: number | null } }) => a + (b._sum.bytes || 0), 0);
   for (const stat of langStats) {
     await prisma.githubLanguageSummary.upsert({
       where: { githubConnectionId_language: { githubConnectionId: connection.id, language: stat.language } },

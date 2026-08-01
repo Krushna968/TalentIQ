@@ -33,6 +33,10 @@ model Candidate {
 
   githubConnection GithubConnection?
 
+  userId           String?   @unique
+  user             User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  orgCandidates    OrgCandidate[]
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -145,4 +149,148 @@ model GithubLanguageSummary {
   repoCount          Int
 
   @@unique([githubConnectionId, language])
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String
+  role            String   @default("CANDIDATE") // CANDIDATE, RECRUITER, ADMIN
+  name            String
+  avatar          String?
+  emailVerified   Boolean  @default(false)
+  status          String   @default("ACTIVE") // ACTIVE, SUSPENDED, DELETED
+  lastLoginAt     DateTime?
+
+  candidate       Candidate?
+  refreshTokens   RefreshToken[]
+  resetTokens     PasswordResetToken[]
+  verificationTokens EmailVerificationToken[]
+  orgMemberships  OrganizationMember[]
+  consentRecords  ConsentRecord[]
+  privacyPref     PrivacyPreference?
+  deletionRequest DeletionRequest?
+  auditLogs       AuditLog[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model RefreshToken {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash          String   @unique
+  expiresAt          DateTime
+  isRevoked          Boolean  @default(false)
+  replacedByTokenHash String?
+  ipAddress          String?
+  userAgent          String?
+
+  createdAt          DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+model Organization {
+  id             String   @id @default(cuid())
+  name           String
+  members        OrganizationMember[]
+  orgCandidates  OrgCandidate[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @default("MEMBER") // ADMIN, MEMBER
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, userId])
+}
+
+model OrgCandidate {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidateId    String
+  candidate      Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  status         String       @default("Discovered") // Discovered, Screened, Interviewing, Offered, Hired
+  addedByUserId  String?
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, candidateId])
+}
+
+model ConsentRecord {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  consentType String    // e.g. "AI_EVALUATION", "PUBLIC_SHARING", "BACKGROUND_VERIFY"
+  status      String    @default("GRANTED") // GRANTED, REVOKED
+  version     String    @default("1.0")
+  grantedAt   DateTime  @default(now())
+  revokedAt   DateTime?
+
+  @@unique([userId, consentType])
+}
+
+model PrivacyPreference {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visibility  String   @default("ORGANIZATION_SHARED") // PRIVATE, ORGANIZATION_SHARED, PUBLIC_PROFILE
+
+  createdAt   DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model DeletionRequest {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, CANCELLED
+  requestedAt DateTime  @default(now())
+  processedAt DateTime?
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  ipAddress String?
+  userAgent String?
+  metadata  String?
+
+  createdAt DateTime @default(now())
 }

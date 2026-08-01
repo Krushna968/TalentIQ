@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import { githubApi } from '../lib/api.js';
@@ -6,6 +6,7 @@ import TopNav from '../components/TopNav.jsx';
 import ScoreRing from '../components/ScoreRing.jsx';
 import RadarChart from '../components/RadarChart.jsx';
 import SpaceFabric from '../components/SpaceFabric.jsx';
+import './CandidateDashboard.css';
 
 const tabs = ['Overview', 'GitHub', 'Commits', 'Skills', 'Network'];
 const activities = [
@@ -24,6 +25,41 @@ const roadmap = [
   ['Applied ML', 'Expand model evaluation fluency'],
 ];
 
+// Custom hook for count-up animations
+function useCountUp(endValue, duration = 1500, delay = 0) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    let startTime = null;
+    let animationFrame;
+
+    const tick = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = timestamp - startTime - delay;
+      
+      if (progress < 0) {
+        animationFrame = requestAnimationFrame(tick);
+        return;
+      }
+      
+      const percentage = Math.min(progress / duration, 1);
+      // easeOutExpo
+      const easeProgress = percentage === 1 ? 1 : 1 - Math.pow(2, -10 * percentage);
+      
+      setValue(Math.floor(easeProgress * endValue));
+
+      if (percentage < 1) {
+        animationFrame = requestAnimationFrame(tick);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [endValue, duration, delay]);
+
+  return value;
+}
+
 function ActivityTimeline() {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -41,6 +77,21 @@ function ActivityTimeline() {
   ));
 }
 
+function StatCard({ icon, label, value, subtitle, delay = 0 }) {
+  const count = useCountUp(value, 1500, delay);
+  return (
+    <div className="stat-card">
+      <span className="material-symbols-outlined stat-icon">{icon}</span>
+      <div className="stat-card-header">
+        <span className="material-symbols-outlined stat-card-icon">{icon}</span>
+        <span className="stat-card-title">{label}</span>
+      </div>
+      <div className="stat-card-value">{count}</div>
+      <span className="stat-card-subtitle">{subtitle}</span>
+    </div>
+  );
+}
+
 function Overview({ candidate }) {
   return (
     <>
@@ -49,14 +100,16 @@ function Overview({ candidate }) {
           <div><div className="eyebrow">Live telemetry</div><h2>Competency Matrix</h2></div>
           <span className="chip chip-gold">Evidence weighted</span>
         </div>
-        <div className="hologram"><RadarChart data={candidate.radar} /></div>
+        <div className="hologram-upgraded">
+          <div className="hologram-scanner"></div>
+          <RadarChart data={candidate.radar} />
+        </div>
       </section>
-      <section className="verified-grid">
-        {[['code', 'GitHub', 'Connected'], ['workspace_premium', 'Credentials', 'Verified'], ['emoji_events', 'Hackathons', 'Scored'], ['groups', 'Network', 'Mapped']].map(([icon, label, status]) => (
-          <div className="glass-panel glass-panel--interactive verified-card" key={label}>
-            <span className="material-symbols-outlined">{icon}</span><strong>{label}</strong><span className="muted" style={{ display: 'block', marginTop: 4, fontSize: 11 }}>{status}</span>
-          </div>
-        ))}
+      <section className="stat-card-grid">
+        <StatCard icon="code" label="GitHub" value={34} subtitle="Verified Repos" delay={0} />
+        <StatCard icon="workspace_premium" label="Credentials" value={4} subtitle="Active Certs" delay={150} />
+        <StatCard icon="emoji_events" label="Hackathons" value={12} subtitle="Wins & Podiums" delay={300} />
+        <StatCard icon="groups" label="Network" value={86} subtitle="Graph Connections" delay={450} />
       </section>
     </>
   );
@@ -208,8 +261,37 @@ function SkillsView({ candidate }) {
 }
 
 function NetworkView() {
-  const nodes = [['Aditi', 'central', '45%', '42%'], ['GraphQL', '', '17%', '21%'], ['React', '', '75%', '18%'], ['Node', '', '78%', '68%'], ['AWS', '', '22%', '73%'], ['tRPC', '', '50%', '80%']];
-  return <section className="glass-panel alternate-view"><div className="eyebrow">Neo4j talent graph</div><h2 className="section-heading" style={{ fontSize: 26 }}>Your connected skill network</h2><div className="network-view"><i className="network-line" style={{ left: '49%', top: '50%', width: '35%', transform: 'rotate(-31deg)' }} /><i className="network-line" style={{ left: '49%', top: '50%', width: '33%', transform: 'rotate(-143deg)' }} /><i className="network-line" style={{ left: '49%', top: '50%', width: '34%', transform: 'rotate(36deg)' }} /><i className="network-line" style={{ left: '49%', top: '50%', width: '32%', transform: 'rotate(146deg)' }} />{nodes.map(([label, cls, left, top]) => <span key={label} className={cls} style={{ left, top }}>{label}</span>)}</div></section>;
+  const nodes = [
+    { label: 'Aditi', type: 'central', cx: '50%', cy: '50%', r: 35 },
+    { label: 'GraphQL', type: 'node', cx: '20%', cy: '25%', r: 24 },
+    { label: 'React', type: 'node', cx: '80%', cy: '22%', r: 24 },
+    { label: 'Node', type: 'node', cx: '82%', cy: '72%', r: 24 },
+    { label: 'AWS', type: 'node', cx: '25%', cy: '78%', r: 24 },
+    { label: 'tRPC', type: 'node', cx: '55%', cy: '85%', r: 24 }
+  ];
+
+  return (
+    <section className="glass-panel alternate-view">
+      <div className="eyebrow">Neo4j talent graph</div>
+      <h2 className="section-heading" style={{ fontSize: 26, marginBottom: 20 }}>Your connected skill network</h2>
+      <div className="network-hologram">
+        <svg className="network-svg" width="100%" height="100%">
+          {nodes.filter(n => n.type !== 'central').map((node, i) => (
+             <line key={i} x1="50%" y1="50%" x2={node.cx} y2={node.cy} className="network-edge" />
+          ))}
+        </svg>
+        {nodes.map(node => (
+          <div 
+            key={node.label} 
+            className={`network-node ${node.type}`} 
+            style={{ left: node.cx, top: node.cy, width: node.r * 2, height: node.r * 2 }}
+          >
+            {node.label}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export default function CandidateDashboard() {
@@ -218,6 +300,8 @@ export default function CandidateDashboard() {
   const [activeTab, setActiveTab] = useState('Overview');
   const [searchParams] = useSearchParams();
   const [notification, setNotification] = useState('');
+
+  const activeTabIndex = tabs.indexOf(activeTab);
 
   useEffect(() => {
     const gh = searchParams.get('github');
@@ -258,9 +342,29 @@ export default function CandidateDashboard() {
             </div>
             <ScoreRing score={candidate.talentScore} size={138} label="Talent score" />
           </header>
+          
           <div className="tab-list" role="tablist" aria-label="Candidate dashboard views">
-            {tabs.map((tab) => <button className={'tab ' + (activeTab === tab ? 'active' : '')} role="tab" aria-selected={activeTab === tab} key={tab} onClick={() => setActiveTab(tab)}>{tab}</button>)}
+            <div 
+              className="tab-indicator" 
+              style={{ 
+                left: `calc(${activeTabIndex} * (100% / ${tabs.length}) + 5px)`, 
+                width: `calc((100% - 10px) / ${tabs.length})` 
+              }} 
+            />
+            {tabs.map((tab) => (
+              <button 
+                className={'tab ' + (activeTab === tab ? 'active' : '')} 
+                role="tab" 
+                aria-selected={activeTab === tab} 
+                key={tab} 
+                onClick={() => setActiveTab(tab)}
+                style={{ zIndex: 2 }}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
+
           {activeTab === 'Overview' && <Overview candidate={candidate} />}
           {activeTab === 'GitHub' && <GitHubTab candidateId={candidate.id} />}
           {activeTab === 'Commits' && <CommitsView />}

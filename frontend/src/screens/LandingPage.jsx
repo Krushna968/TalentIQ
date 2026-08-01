@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Sparkles,
@@ -24,7 +24,6 @@ const GithubIcon = ({ size = 16, className = '' }) => (
 
 import FuturisticBackground from '../components/landing/FuturisticBackground.jsx';
 import AICore3D from '../components/landing/AICore3D.jsx';
-// FeatureOrbit replaced by inline left/right card columns
 import AIPipeline from '../components/landing/AIPipeline.jsx';
 import PlatformPreview3D from '../components/landing/PlatformPreview3D.jsx';
 import CustomCursor from '../components/landing/CustomCursor.jsx';
@@ -71,10 +70,56 @@ const whyTalentIQCards = [
   },
 ];
 
+function AnimatedStat({ value, decimals = 0, suffix = '', prefix = '', duration = 2000 }) {
+  const ref = useRef(null);
+  const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setStarted(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.1 });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!started) return;
+    let startTime = null;
+    let animationFrame;
+    const tick = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = timestamp - startTime;
+      const percentage = Math.min(progress / duration, 1);
+      const easeProgress = percentage === 1 ? 1 : 1 - Math.pow(2, -10 * percentage);
+      setCount(easeProgress * value);
+      if (percentage < 1) animationFrame = requestAnimationFrame(tick);
+    };
+    animationFrame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [value, duration, started]);
+
+  const displayValue = count.toFixed(decimals);
+  const formatted = decimals === 0 && value >= 1000 
+    ? Number(displayValue).toLocaleString()
+    : displayValue;
+
+  return <div ref={ref} className="stat-val">{prefix}{formatted}{suffix}</div>;
+}
+
 export default function LandingPage() {
   const navigate = useNavigate();
   const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Smooth scroll handler
   const scrollToSection = (id) => {
@@ -94,7 +139,7 @@ export default function LandingPage() {
       <DemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
 
       {/* Top Glass Navigation */}
-      <header className="top-nav">
+      <header className={`top-nav landing-top-nav ${scrolled ? 'scrolled' : 'transparent'}`}>
         <div className="top-nav-inner">
           <Link className="brand" to="/">
             <span className="brand-mark" aria-hidden="true" />
@@ -290,27 +335,27 @@ export default function LandingPage() {
         {/* LIVE STATS COUNTER ROW */}
         <section className="stats-counter-row content-wrap" aria-label="TalentIQ Platform Statistics">
           <div className="stat-counter-card glass-panel">
-            <div className="stat-val">12,450+</div>
+            <AnimatedStat value={12450} suffix="+" />
             <span className="stat-lbl">Verified Profiles</span>
           </div>
 
           <div className="stat-counter-card glass-panel">
-            <div className="stat-val">1.84M+</div>
+            <AnimatedStat value={1.84} decimals={2} suffix="M+" />
             <span className="stat-lbl">Repositories Analysed</span>
           </div>
 
           <div className="stat-counter-card glass-panel">
-            <div className="stat-val">450K+</div>
+            <AnimatedStat value={450} suffix="K+" />
             <span className="stat-lbl">Skills Verified</span>
           </div>
 
           <div className="stat-counter-card glass-panel">
-            <div className="stat-val">99.4%</div>
+            <AnimatedStat value={99.4} decimals={1} suffix="%" />
             <span className="stat-lbl">AI Matching Accuracy</span>
           </div>
 
           <div className="stat-counter-card glass-panel">
-            <div className="stat-val">850+</div>
+            <AnimatedStat value={850} suffix="+" />
             <span className="stat-lbl">Recruiters Supported</span>
           </div>
         </section>

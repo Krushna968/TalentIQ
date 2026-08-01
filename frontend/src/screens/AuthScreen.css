@@ -1,0 +1,189 @@
+/* ==========================================================================
+   Auth Screen - High-Tech UI Enhancements
+   ========================================================================== */
+
+/* 1. Left Panel Orb & Holographic Atmosphere */
+.auth-story-orb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(0, 229, 255, 0.15) 0%, transparent 60%);
+  transform: translate(-50%, -50%);
+  filter: blur(40px);
+  z-index: 0;
+  animation: orb-pulse 6s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes orb-pulse {
+  0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+}
+
+/* 2. Right Panel Grid Background */
+.auth-form-side-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.5;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 3. Form Card Entrance Animation */
+.auth-card-animated {
+  position: relative;
+  z-index: 1;
+  animation: auth-card-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+@keyframes auth-card-enter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 4. Enhanced Role Toggle Buttons */
+.role-toggle-enhanced {
+  position: relative;
+}
+
+.role-toggle-enhanced button {
+  position: relative;
+  z-index: 2;
+}
+
+.role-toggle-enhanced button.active {
+  border-color: rgba(0, 229, 255, 0.4);
+  color: #fff;
+  background: rgba(0, 229, 255, 0.15);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.2), inset 0 0 10px rgba(0, 229, 255, 0.1);
+}
+
+.role-toggle-enhanced button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: #00e5ff;
+  border-radius: 4px;
+  box-shadow: 0 0 10px #00e5ff;
+}
+
+/* 5. Floating Labels */
+.floating-input-group {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.floating-input-group .form-input {
+  padding-top: 18px;
+  padding-bottom: 2px;
+  height: 52px;
+}
+
+.floating-input-group .form-label {
+  position: absolute;
+  top: 18px;
+  left: 40px;
+  font-size: 13px;
+  color: #7f92a7;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  margin: 0;
+  text-transform: none;
+  font-family: 'IBM Plex Sans', sans-serif;
+  letter-spacing: normal;
+}
+
+.floating-input-group .form-input:focus ~ .form-label,
+.floating-input-group .form-input:not(:placeholder-shown) ~ .form-label {
+  top: 6px;
+  left: 40px;
+  font-size: 10px;
+  color: #00e5ff;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+}
+
+.floating-input-group .input-icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: #7f92a7;
+  transition: color 0.2s ease;
+  z-index: 1;
+}
+
+.floating-input-group .form-input:focus ~ .input-icon {
+  color: #00e5ff;
+}
+
+/* 6. Social Login Button */
+.btn-social-github {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.btn-social-github:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+  color: #657b98;
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.divider:not(:empty)::before {
+  margin-right: 14px;
+}
+
+.divider:not(:empty)::after {
+  margin-left: 14px;
+}

@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ExternalLink, Sparkles, Check, ArrowRight, Search, SlidersHorizontal } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 import TopNav from '../components/TopNav.jsx';
 import SpaceFabric from '../components/SpaceFabric.jsx';
+import './RecruiterSearch.css';
 
 const skillFilters = ['Backend engineering', 'System architecture', 'Machine learning'];
 const categorySkills = {
@@ -45,12 +47,47 @@ function candidateMatch(candidate, query) {
   return Math.min(99, Math.max(0, signal + Math.round(candidate.talentScore / 3)));
 }
 
+function SkeletonCard() {
+  return (
+    <div className="skeleton-card">
+      <div style={{ display: 'flex', gap: '13px', alignItems: 'center' }}>
+        <div className="skel-avatar" />
+        <div>
+          <div className="skel-line title" />
+          <div className="skel-line subtitle" />
+        </div>
+      </div>
+      <div>
+        <span className="skel-chip" />
+        <span className="skel-chip" />
+        <span className="skel-chip" />
+      </div>
+      <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <div className="skel-line subtitle" style={{ marginBottom: 4 }} />
+          <div className="skel-line title" style={{ width: 40, height: 24, margin: 0 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function RecruiterSearch() {
   const { candidates } = useApp();
   const [query, setQuery] = useState('');
   const [minimumScore, setMinimumScore] = useState(70);
   const [selectedSkills, setSelectedSkills] = useState(['Backend engineering', 'System architecture']);
   const [verifiedOnly, setVerifiedOnly] = useState(true);
+  
+  // Loading state simulation
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Debounce the query to trigger a small loading state
+  useEffect(() => {
+    setIsSearching(true);
+    const t = setTimeout(() => setIsSearching(false), 400);
+    return () => clearTimeout(t);
+  }, [query, minimumScore, selectedSkills, verifiedOnly]);
 
   const results = useMemo(() => candidates
     .map((candidate) => ({ ...candidate, match: candidateMatch(candidate, query) }))
@@ -72,22 +109,31 @@ export default function RecruiterSearch() {
       <main className="content-wrap search-layout">
         <aside className="glass-panel filter-panel" aria-label="Talent filters">
           <div className="eyebrow">Signal filters</div>
+          
           <div className="filter-group">
             <h2 className="filter-title">Specialism</h2>
             {skillFilters.map((skill) => (
-              <label className="checkbox-row" key={skill}>
+              <label className="checkbox-row-custom" key={skill}>
                 <input type="checkbox" checked={selectedSkills.includes(skill)} onChange={() => toggleSkill(skill)} />
+                <div className="checkbox-custom">
+                  <Check size={14} strokeWidth={3} />
+                </div>
                 {skill}
               </label>
             ))}
           </div>
+
           <div className="filter-group">
             <div className="range-meta"><span>Minimum talent score</span><b>{minimumScore}</b></div>
-            <input className="range" type="range" min="55" max="95" value={minimumScore} onChange={(event) => setMinimumScore(Number(event.target.value))} />
+            <input className="range-custom" type="range" min="55" max="95" value={minimumScore} onChange={(event) => setMinimumScore(Number(event.target.value))} />
           </div>
+
           <div className="filter-group">
-            <label className="checkbox-row">
+            <label className="checkbox-row-custom">
               <input type="checkbox" checked={verifiedOnly} onChange={(event) => setVerifiedOnly(event.target.checked)} />
+              <div className="checkbox-custom">
+                <Check size={14} strokeWidth={3} />
+              </div>
               Verified evidence only
             </label>
           </div>
@@ -100,32 +146,39 @@ export default function RecruiterSearch() {
               <h1>Navigate the talent constellation.</h1>
             </div>
             <Link className="button button-ghost" to="/report/elena-rodriguez" state={{ candidateId: 'elena-rodriguez', returnTo: '/recruiter' }}>
-              Open featured dossier <span className="material-symbols-outlined" style={{ fontSize: 17 }}>arrow_outward</span>
+              Open featured dossier <ExternalLink size={17} style={{ marginLeft: 4 }} />
             </Link>
           </div>
 
           <form className="copilot-search" onSubmit={(event) => event.preventDefault()}>
-            <span className="material-symbols-outlined">auto_awesome</span>
+            <Sparkles size={22} className="text-cyan" color="#00e5ff" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ask Copilot: backend engineers with hackathon wins and Kubernetes depth…" aria-label="Search verified talent" />
             <button className="button button-primary" type="submit">Search</button>
           </form>
 
           <div className="results-meta">
             <span>{results.length} verified candidate{results.length === 1 ? '' : 's'} matched to your signals</span>
-            <span>● HIGH-CONFIDENCE MODE</span>
+            <span className="high-confidence-text"><span className="pulse-dot" /> HIGH-CONFIDENCE MODE</span>
           </div>
 
-          {results.length ? (
+          {isSearching ? (
+            <div className="candidate-grid">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : results.length ? (
             <div className="candidate-grid">
               {results.map((candidate) => {
                 const status = candidate.status ? statusStyles[candidate.status] : null;
                 return (
                   <Link key={candidate.id} to={'/report/' + candidate.id} state={{ candidateId: candidate.id, returnTo: '/recruiter' }} className="glass-panel glass-panel--interactive candidate-card" aria-label={'Open report for ' + candidate.name}>
                     <MatchRing score={candidate.match} />
-                    {status && <span className="status-badge" style={{ position: 'absolute', top: 19, left: 19, color: status.color }}>{status.label}</span>}
+                    {status && <span className="status-badge" style={{ position: 'absolute', top: 19, left: 19, color: status.color, background: 'rgba(5, 5, 10, 0.8)', padding: '4px 10px' }}>{status.label}</span>}
                     <div className="candidate-top" style={{ paddingTop: status ? 23 : 0 }}>
-                      <div className="avatar" style={{ width: 52, height: 52, background: candidate.avatarColor }}>
-                        {candidate.initials}<span className="verified-dot"><span className="material-symbols-outlined" style={{ fontSize: 11 }}>check</span></span>
+                      <div className="avatar-enhanced" style={{ width: 52, height: 52, background: candidate.avatarColor }}>
+                        {candidate.initials}
+                        <span className="verified-badge-enhanced"><Check size={12} strokeWidth={3} /></span>
                       </div>
                       <div>
                         <h2 className="candidate-name">{candidate.name}</h2>
@@ -137,16 +190,22 @@ export default function RecruiterSearch() {
                     </div>
                     <div className="candidate-bottom">
                       <div><small>Talent score</small><strong>{candidate.talentScore}<span style={{ color: '#5a7187', fontSize: 15 }}>.0</span></strong></div>
-                      <span className="material-symbols-outlined card-arrow">arrow_forward</span>
+                      <ArrowRight size={20} className="card-arrow" />
                     </div>
                   </Link>
                 );
               })}
             </div>
           ) : (
-            <div className="glass-panel empty-state">
-              <span className="material-symbols-outlined">travel_explore</span>
-              No candidates match this combination yet. Try widening the score or specialism filters.
+            <div className="glass-panel empty-state-enhanced">
+              <div className="empty-icon-wrapper">
+                <Search size={48} strokeWidth={1.5} />
+              </div>
+              <h3 style={{ margin: '0 0 8px', color: '#fff', fontSize: 18, fontFamily: 'Space Grotesk, sans-serif' }}>No matches found</h3>
+              <p style={{ margin: '0 0 24px', maxWidth: 400 }}>No candidates match this specific combination. Try widening the score or specialism filters.</p>
+              <button className="button button-ghost" onClick={() => { setMinimumScore(55); setSelectedSkills([]); }}>
+                <SlidersHorizontal size={16} /> Clear Filters
+              </button>
             </div>
           )}
         </section>

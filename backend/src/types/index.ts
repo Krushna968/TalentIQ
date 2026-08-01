@@ -4,8 +4,11 @@ export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     email: string;
-    role: 'candidate' | 'recruiter' | 'admin';
+    role: string;
+    name?: string;
+    organizationId?: string;
   };
+  requestId?: string;
 }
 
 export interface PaginationParams {
@@ -15,13 +18,24 @@ export interface PaginationParams {
   order?: 'asc' | 'desc';
 }
 
+export interface ApiErrorDetail {
+  field?: string;
+  message: string;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
-  error?: string;
+  error?: {
+    code: string;
+    message: string;
+    details?: ApiErrorDetail[];
+  } | string;
+  requestId?: string;
   meta?: {
     page: number;
     limit: number;
     total: number;
   };
 }
+
