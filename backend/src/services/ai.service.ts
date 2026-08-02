@@ -1,4 +1,5 @@
 import { env } from '../config/env.js';
+import { chatWithLyzr } from './lyzr.service.js';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MAX_INPUT_LENGTH = 12_000;
@@ -56,20 +57,51 @@ export async function generateJson<T>(system: string, input: string): Promise<T>
 }
 
 type InterviewQuestion = { question: string; category: string; rubric: string[] };
-export async function createInterviewQuestion(input: { role?: string; skills?: string[]; previousAnswers?: string[] }) {
-  return generateJson<InterviewQuestion>('You are a fair technical interview coach. Generate one practical question calibrated to the role and skills. Never infer protected traits. JSON shape: {question:string,category:string,rubric:string[]}.', JSON.stringify(input));
+export async function createInterviewQuestion(input: { role?: string; skills?: string[]; previousAnswers?: string[]; sessionId?: string }) {
+  return chatWithLyzr<InterviewQuestion>({
+    agent_id: env.LYZR_AGENT_INTERVIEWER,
+    user_id: 'default_user',
+    session_id: input.sessionId || 'default_session',
+    message: JSON.stringify({
+      mode: 'question',
+      role: input.role || 'Software Engineer',
+      skills: input.skills || [],
+      previousAnswers: input.previousAnswers || []
+    })
+  });
 }
 
-export async function evaluateInterviewAnswer(input: { role?: string; question: string; answer: string }) {
-  return generateJson<{ scores: { technical: number; communication: number; problemSolving: number; overall: number }; feedback: string; strengths: string[]; improvements: string[]; nextQuestion: InterviewQuestion }>('You are a supportive interview evaluator. Score only the submitted answer, from 0 to 100, and give concrete feedback. JSON shape: {scores:{technical:number,communication:number,problemSolving:number,overall:number},feedback:string,strengths:string[],improvements:string[],nextQuestion:{question:string,category:string,rubric:string[]}}.', JSON.stringify(input));
+export async function evaluateInterviewAnswer(input: { role?: string; question: string; answer: string; sessionId?: string; previousAnswers?: string[] }) {
+  return chatWithLyzr<{ scores: { technical: number; communication: number; problemSolving: number; overall: number }; feedback: string; strengths: string[]; improvements: string[]; nextQuestion: InterviewQuestion }>({
+    agent_id: env.LYZR_AGENT_INTERVIEWER,
+    user_id: 'default_user',
+    session_id: input.sessionId || 'default_session',
+    message: JSON.stringify({
+      mode: 'evaluate',
+      role: input.role || 'Software Engineer',
+      question: input.question,
+      answer: input.answer,
+      previousAnswers: input.previousAnswers || []
+    })
+  });
 }
 
 export async function createCareerRoadmap(input: { currentRole?: string; targetRole: string; skills?: string[]; goals?: string }) {
   return generateJson<{ summary: string; strengths: string[]; gaps: string[]; plan: Array<{ title: string; timeframe: string; actions: string[]; evidence: string }> }>('You are a practical career coach. Build an evidence-led, achievable 90-day roadmap. JSON shape: {summary:string,strengths:string[],gaps:string[],plan:[{title:string,timeframe:string,actions:string[],evidence:string}]}.', JSON.stringify(input));
 }
 
-export async function createResumeDraft(input: { targetRole: string; profile: string; evidence?: string[] }) {
-  return generateJson<{ headline: string; summary: string; keySkills: string[]; experienceBullets: string[]; projects: string[] }>('You are a resume editor. Use only supplied facts, avoid inventing employers or metrics, and write concise ATS-friendly content. JSON shape: {headline:string,summary:string,keySkills:string[],experienceBullets:string[],projects:string[]}.', JSON.stringify(input));
+export async function createResumeDraft(input: { targetRole: string; profile: any; evidence?: any[]; verifiedEvidence?: any[]; sessionId?: string }) {
+  return chatWithLyzr<{ headline: string; summary: string; keySkills: string[]; experienceBullets: any[]; projects: any[] }>({
+    agent_id: env.LYZR_AGENT_RESUME_PROFILE,
+    user_id: 'default_user',
+    session_id: input.sessionId || 'default_session',
+    message: JSON.stringify({
+      targetRole: input.targetRole,
+      profile: input.profile,
+      evidence: input.evidence,
+      verifiedEvidence: input.verifiedEvidence || []
+    })
+  });
 }
 
 export async function analyzeRoleMatch(input: { role: string; requiredSkills?: string[]; candidates: Array<{ id: string; name: string; title: string; skills: string[]; evidence?: string }> }) {

@@ -37,4 +37,10 @@ export const env = {
   LINKEDIN_CALLBACK_URL: process.env.LINKEDIN_CALLBACK_URL || 'http://localhost:4000/api/auth/linkedin/callback',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  LYZR_API_KEY: process.env.LYZR_API_KEY || '',
+  LYZR_BASE_URL: process.env.LYZR_BASE_URL || 'https://agent-prod.studio.lyzr.ai',
+  LYZR_AGENT_INTERVIEWER: process.env.LYZR_AGENT_INTERVIEWER || '',
+  LYZR_AGENT_RESUME_PROFILE: process.env.LYZR_AGENT_RESUME_PROFILE || '',
+  LYZR_TIMEOUT_MS: parseInt(process.env.LYZR_TIMEOUT_MS || '30000', 10),
+  LYZR_MAX_RETRIES: parseInt(process.env.LYZR_MAX_RETRIES || '1', 10),
 };

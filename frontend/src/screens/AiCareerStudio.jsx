@@ -58,7 +58,7 @@ function Result({ value, onScore, scoreLoading }) {
     {value.summary && <><h2>{value.headline || 'Career roadmap'}</h2><p>{value.summary}</p></>}
     {value.strengths && <><h3>Strengths</h3><p className="muted">{joinItems(value.strengths)}</p><h3>Skill gaps</h3><p className="muted">{joinItems(value.gaps)}</p></>}
     {value.plan?.map((item) => <article key={item.title} style={{ marginTop: 14, padding: 14, borderRadius: 10, background: 'rgba(255,255,255,.035)' }}><span className="chip">{item.timeframe}</span><h3 style={{ margin: '9px 0' }}>{item.title}</h3><p className="muted">{joinItems(item.actions)}</p><small>{item.evidence}</small></article>)}
-    {resumeDraft && <><h3>Key skills</h3><p className="muted">{joinItems(value.keySkills)}</p><h3>Experience bullets</h3><ul>{value.experienceBullets.map((item) => <li key={item}>{item}</li>)}</ul><h3>Projects</h3><ul>{value.projects.map((item) => <li key={item}>{item}</li>)}</ul><button className="btn btn-primary" onClick={onScore} disabled={scoreLoading} style={{ marginTop: 8 }}>{scoreLoading ? 'Scoring resume...' : 'Score this draft'}</button></>}
+    {resumeDraft && <><h3>Key skills</h3><p className="muted">{joinItems(value.keySkills)}</p><h3>Experience bullets</h3><ul>{value.experienceBullets?.map((item, i) => <li key={i}>{typeof item === 'string' ? item : item.text}</li>)}</ul><h3>Projects</h3><ul>{value.projects?.map((item, i) => <li key={i}>{typeof item === 'string' ? item : `${item.name}: ${item.description}`}</li>)}</ul><button className="btn btn-primary" onClick={onScore} disabled={scoreLoading} style={{ marginTop: 8 }}>{scoreLoading ? 'Scoring resume...' : 'Score this draft'}</button></>}
   </section>;
 }
 

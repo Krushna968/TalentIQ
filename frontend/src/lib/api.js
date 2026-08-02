@@ -44,7 +44,7 @@ export const evidenceApi = {
 };
 
 export const interviewApi = {
-  getQuestion: (role, skills) => api.get(`/interviews/questions?role=${encodeURIComponent(role)}&skills=${encodeURIComponent(skills)}`),
+  getQuestion: (role, skills, sessionId) => api.get(`/interviews/questions?role=${encodeURIComponent(role)}&skills=${encodeURIComponent(skills)}${sessionId ? `&sessionId=${encodeURIComponent(sessionId)}` : ''}`),
   evaluate: (payload) => api.post('/interviews/submit', payload),
 };
 

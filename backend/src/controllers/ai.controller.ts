@@ -8,7 +8,7 @@ const handle = async (res: Response, work: () => Promise<unknown>) => {
   catch (error) { const aiError = error as ai.AiServiceError; res.status(aiError.status || 500).json({ error: aiError.message || 'AI request failed' }); }
 };
 
-export const status = async (_req: Request, res: Response) => res.json({ configured: ai.isAiConfigured(), provider: 'groq', model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile' });
+export const status = async (_req: Request, res: Response) => res.json({ configured: ai.isAiConfigured(), provider: 'lyzr', model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile' });
 export const careerRoadmap = async (req: Request, res: Response) => handle(res, () => ai.createCareerRoadmap(req.body));
 export const resumeDraft = async (req: Request, res: Response) => handle(res, () => ai.createResumeDraft(req.body));
 export const resumeScore = async (req: Request, res: Response) => handle(res, async () => scoreResume(req.body));

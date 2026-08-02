@@ -13,11 +13,14 @@ export default function AIInterview() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sessionId, setSessionId] = useState(null);
 
   const start = async () => {
     setLoading(true); setError(''); setResult(null);
     try {
-      const { questions } = await interviewApi.getQuestion(role, 'React, Node.js, TypeScript, system design');
+      const newSessionId = crypto.randomUUID();
+      setSessionId(newSessionId);
+      const { questions } = await interviewApi.getQuestion(role, 'React, Node.js, TypeScript, system design', newSessionId);
       setQuestion(questions[0]); setHistory([]); setScores(initialScores);
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
@@ -27,7 +30,13 @@ export default function AIInterview() {
     if (!question || !answer.trim()) return;
     setLoading(true); setError('');
     try {
-      const evaluation = await interviewApi.evaluate({ role, question: question.question, answer });
+      const evaluation = await interviewApi.evaluate({
+        role,
+        question: question.question,
+        answer,
+        sessionId,
+        previousAnswers: history.map(h => h.answer)
+      });
       setScores(evaluation.scores); setResult(evaluation);
       setHistory((current) => [...current, { question: question.question, answer, feedback: evaluation.feedback }]);
       setQuestion(evaluation.nextQuestion); setAnswer('');
