@@ -7,10 +7,10 @@ headers = []
 [functions."*"]
 
 [build]
-publish = "D:\\Projects\\stitch_talentiq_ai_skill_verification_platform\\stitch_talentiq_ai_skill_verification_platform\\talentiq-app\\dist"
+publish = "D:\\Projects\\stitch_talentiq_ai_skill_verification_platform\\stitch_talentiq_ai_skill_verification_platform\\talentiq-app\\frontend\\dist"
 publishOrigin = "config"
 commandOrigin = "config"
-command = "npm run build"
+command = "cd frontend && npm run build"
 
 [build.environment]
 
